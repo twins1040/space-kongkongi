@@ -263,6 +263,13 @@ class GameScene extends Phaser.Scene {
         this.hp = 3;
         this.isInvincible = false;
 
+        // 콤보
+        this.combo = 0;
+        this.comboText = this.add.text(240, 80, '', {
+            fontSize: '40px', fontFamily: 'Arial Black, Arial', color: '#ffffff',
+            stroke: '#000000', strokeThickness: 6
+        }).setOrigin(0.5).setDepth(200).setAlpha(0);
+
         // 테스트용 적 스폰
         this.spawnEnemy('slime', -32, 640, 1);
         this.spawnEnemy('worm', 512, 640, -1);
@@ -323,6 +330,34 @@ class GameScene extends Phaser.Scene {
         }
     }
 
+    getComboMultiplier() {
+        if (this.combo <= 1) return 1;
+        if (this.combo === 2) return 2;
+        if (this.combo === 3) return 3;
+        if (this.combo === 4) return 5;
+        return 8;
+    }
+
+    updateComboDisplay() {
+        if (this.combo < 2) {
+            this.comboText.setAlpha(0);
+            return;
+        }
+        const colors = { 2: '#ffffff', 3: '#ffff00', 4: '#ff8800', 5: '#ff0000' };
+        const colorKey = Math.min(this.combo, 5);
+        this.comboText.setText('×' + this.getComboMultiplier() + ' COMBO!');
+        this.comboText.setColor(colors[colorKey]);
+        this.comboText.setAlpha(1);
+        this.tweens.add({
+            targets: this.comboText,
+            scaleX: 1.5,
+            scaleY: 1.5,
+            duration: 100,
+            yoyo: true,
+            ease: 'Quad.easeOut'
+        });
+    }
+
     killEnemy(enemy) {
         enemy.isDying = true;
         enemy.body.enable = false;
@@ -330,10 +365,17 @@ class GameScene extends Phaser.Scene {
         const restFrames = { slime: 'slime_normal_rest', worm: 'worm_normal_rest' };
         enemy.setFrame(restFrames[enemy.enemyType]);
 
+        // 콤보
+        this.combo++;
+        const multiplier = this.getComboMultiplier();
+        const points = enemy.enemyScore * multiplier;
+        this.updateComboDisplay();
+
         // 점수 팝업
-        const scoreTxt = this.add.text(enemy.x, enemy.y - 20, '+' + enemy.enemyScore, {
-            fontSize: '16px', fontFamily: 'Arial', color: '#ffff00',
-            stroke: '#000', strokeThickness: 3
+        const label = multiplier > 1 ? '+' + points + ' ×' + multiplier : '+' + points;
+        const scoreTxt = this.add.text(enemy.x, enemy.y - 20, label, {
+            fontSize: '20px', fontFamily: 'Arial Black, Arial', color: '#ffff00',
+            stroke: '#000', strokeThickness: 4
         }).setOrigin(0.5).setDepth(50);
 
         this.tweens.add({
@@ -353,7 +395,7 @@ class GameScene extends Phaser.Scene {
         });
 
         this.sound.play('sfx_disappear');
-        this.addScore(enemy.enemyScore);
+        this.addScore(points);
     }
 
     hitPlayer(player, enemy) {
@@ -454,6 +496,18 @@ class GameScene extends Phaser.Scene {
             player.setVelocityY(-620);
             this.touchJump = false;
             this.sound.play('sfx_jump');
+        }
+
+        // 착지 시 콤보 리셋
+        if (onFloor && this.combo > 0) {
+            if (this.combo >= 2) {
+                this.tweens.add({
+                    targets: this.comboText,
+                    alpha: 0,
+                    duration: 300
+                });
+            }
+            this.combo = 0;
         }
 
         // Wrap-around (플레이어)
