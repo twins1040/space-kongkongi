@@ -113,18 +113,125 @@ class MenuScene extends Phaser.Scene {
     }
 
     startGame() {
+        if (this.sound.context.state === 'suspended') {
+            this.sound.context.resume();
+        }
         this.sound.play('sfx_select');
         this.scene.start('Game');
     }
 }
 
-// Game: 메인 게임 (단계 3에서 구현)
 class GameScene extends Phaser.Scene {
     constructor() {
         super('Game');
     }
 
     create() {
+        const w = 480;
+        const h = 720;
+
+        // 배경
+        this.add.tileSprite(0, 0, w, h, 'backgrounds', 'background_solid_sky').setOrigin(0);
+        this.add.tileSprite(0, 300, w, h - 300, 'backgrounds', 'background_fade_hills').setOrigin(0).setAlpha(0.5);
+        this.add.tileSprite(0, 500, w, h - 500, 'backgrounds', 'background_color_hills').setOrigin(0).setAlpha(0.7);
+
+        // 바닥 (static group)
+        this.ground = this.physics.add.staticGroup();
+        for (let x = 0; x < w; x += 64) {
+            this.ground.create(x + 32, h - 32, 'tiles', 'terrain_grass_block_top');
+        }
+
+        // 플랫폼 (one-way)
+        this.platforms = this.physics.add.staticGroup();
+        this.createPlatform(144, 560);
+        this.createPlatform(336, 380);
+        this.createPlatform(144, 200);
+
+        // 플레이어
+        this.player = this.physics.add.sprite(240, 640, 'characters', 'character_beige_idle');
+        this.player.setScale(0.375);
+        this.player.body.setSize(106, 117);
+        this.player.body.setOffset(11, 11);
+        this.player.setMaxVelocity(200, 500);
+        this.player.setCollideWorldBounds(false);
+
+        // 애니메이션
+        this.anims.create({
+            key: 'walk',
+            frames: [
+                { key: 'characters', frame: 'character_beige_walk_a' },
+                { key: 'characters', frame: 'character_beige_walk_b' }
+            ],
+            frameRate: 8,
+            repeat: -1
+        });
+
+        // 충돌
+        this.physics.add.collider(this.player, this.ground);
+        this.physics.add.collider(this.player, this.platforms);
+
+        // 키보드
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.wasd = this.input.keyboard.addKeys({
+            up: Phaser.Input.Keyboard.KeyCodes.W,
+            left: Phaser.Input.Keyboard.KeyCodes.A,
+            right: Phaser.Input.Keyboard.KeyCodes.D,
+            space: Phaser.Input.Keyboard.KeyCodes.SPACE
+        });
+    }
+
+    createPlatform(cx, y) {
+        const left = this.platforms.create(cx - 64, y, 'tiles', 'terrain_grass_horizontal_left');
+        const mid = this.platforms.create(cx, y, 'tiles', 'terrain_grass_horizontal_middle');
+        const right = this.platforms.create(cx + 64, y, 'tiles', 'terrain_grass_horizontal_right');
+        [left, mid, right].forEach(tile => {
+            tile.body.checkCollision.down = false;
+            tile.body.checkCollision.left = false;
+            tile.body.checkCollision.right = false;
+        });
+    }
+
+    update() {
+        const player = this.player;
+        const onFloor = player.body.blocked.down || player.body.touching.down;
+
+        // 이동
+        const leftDown = this.cursors.left.isDown || this.wasd.left.isDown;
+        const rightDown = this.cursors.right.isDown || this.wasd.right.isDown;
+        const jumpDown = Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
+                         Phaser.Input.Keyboard.JustDown(this.wasd.up) ||
+                         Phaser.Input.Keyboard.JustDown(this.wasd.space);
+
+        if (leftDown) {
+            player.setVelocityX(-200);
+            player.setFlipX(true);
+        } else if (rightDown) {
+            player.setVelocityX(200);
+            player.setFlipX(false);
+        } else {
+            player.setVelocityX(0);
+        }
+
+        // 점프
+        if (jumpDown && onFloor) {
+            player.setVelocityY(-420);
+        }
+
+        // 애니메이션
+        if (!onFloor) {
+            if (player.body.velocity.y < 0) {
+                player.anims.stop();
+                player.setFrame('character_beige_jump');
+            } else {
+                player.anims.stop();
+                player.setFrame('character_beige_front');
+            }
+        } else if (player.body.velocity.x !== 0) {
+            player.anims.play('walk', true);
+        } else {
+            player.anims.stop();
+            player.setFrame('character_beige_idle');
+        }
     }
 }
 
