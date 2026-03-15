@@ -191,33 +191,22 @@ class GameScene extends Phaser.Scene {
         this.touchRight = false;
         this.touchJump = false;
 
-        const btnAlpha = 0.3;
-        const btnAlphaActive = 0.6;
+        const btnAlpha = 0.7;
+        const btnAlphaActive = 0.9;
         const btnY = 668;
         const btnR = 32;
 
-        const btnLeft = this.add.circle(48, btnY, btnR, 0xffffff, btnAlpha).setDepth(100).setScrollFactor(0);
-        const btnRight = this.add.circle(128, btnY, btnR, 0xffffff, btnAlpha).setDepth(100).setScrollFactor(0);
-        const btnJump = this.add.circle(432, btnY, btnR, 0xffffff, btnAlpha).setDepth(100).setScrollFactor(0);
+        this.btnLeft = this.add.circle(48, btnY, btnR, 0xffffff, btnAlpha).setDepth(100);
+        this.btnRight = this.add.circle(128, btnY, btnR, 0xffffff, btnAlpha).setDepth(100);
+        this.btnJump = this.add.circle(432, btnY, btnR, 0xffffff, btnAlpha).setDepth(100);
 
-        // 방향 표시
         this.add.text(48, btnY, '◀', { fontSize: '20px', color: '#000' }).setOrigin(0.5).setAlpha(0.5).setDepth(101);
         this.add.text(128, btnY, '▶', { fontSize: '20px', color: '#000' }).setOrigin(0.5).setAlpha(0.5).setDepth(101);
         this.add.text(432, btnY, '▲', { fontSize: '20px', color: '#000' }).setOrigin(0.5).setAlpha(0.5).setDepth(101);
 
-        [btnLeft, btnRight, btnJump].forEach(btn => btn.setInteractive());
-
-        btnLeft.on('pointerdown', () => { this.touchLeft = true; btnLeft.setAlpha(btnAlphaActive); });
-        btnLeft.on('pointerup', () => { this.touchLeft = false; btnLeft.setAlpha(btnAlpha); });
-        btnLeft.on('pointerout', () => { this.touchLeft = false; btnLeft.setAlpha(btnAlpha); });
-
-        btnRight.on('pointerdown', () => { this.touchRight = true; btnRight.setAlpha(btnAlphaActive); });
-        btnRight.on('pointerup', () => { this.touchRight = false; btnRight.setAlpha(btnAlpha); });
-        btnRight.on('pointerout', () => { this.touchRight = false; btnRight.setAlpha(btnAlpha); });
-
-        btnJump.on('pointerdown', () => { this.touchJump = true; btnJump.setAlpha(btnAlphaActive); });
-        btnJump.on('pointerup', () => { this.touchJump = false; btnJump.setAlpha(btnAlpha); });
-        btnJump.on('pointerout', () => { this.touchJump = false; btnJump.setAlpha(btnAlpha); });
+        // 터치 영역 (화면 좌측 하단 = 이동, 우측 하단 = 점프)
+        this.touchBtnAlpha = btnAlpha;
+        this.touchBtnAlphaActive = btnAlphaActive;
     }
 
     createPlatform(cx, y) {
@@ -235,6 +224,29 @@ class GameScene extends Phaser.Scene {
     update() {
         const player = this.player;
         const onFloor = player.body.blocked.down || player.body.touching.down;
+
+        // 터치 입력: 모든 포인터를 순회하여 영역 판정
+        this.touchLeft = false;
+        this.touchRight = false;
+        let newTouchJump = false;
+        const pointers = [this.input.pointer1, this.input.pointer2, this.input.pointer3];
+        for (const p of pointers) {
+            if (!p || !p.isDown) continue;
+            const px = p.x;
+            const py = p.y;
+            if (py > 620) {
+                if (px < 90) this.touchLeft = true;
+                else if (px < 170) this.touchRight = true;
+                else if (px > 380) newTouchJump = true;
+            }
+        }
+        if (newTouchJump && !this._prevTouchJump) this.touchJump = true;
+        this._prevTouchJump = newTouchJump;
+
+        // 버튼 비주얼
+        this.btnLeft.setAlpha(this.touchLeft ? this.touchBtnAlphaActive : this.touchBtnAlpha);
+        this.btnRight.setAlpha(this.touchRight ? this.touchBtnAlphaActive : this.touchBtnAlpha);
+        this.btnJump.setAlpha(newTouchJump ? this.touchBtnAlphaActive : this.touchBtnAlpha);
 
         // 이동
         const leftDown = this.cursors.left.isDown || this.wasd.left.isDown || this.touchLeft;
@@ -298,6 +310,9 @@ const config = {
             gravity: { y: 900 },
             debug: false
         }
+    },
+    input: {
+        activePointers: 3
     },
     scene: [BootScene, LoadScene, MenuScene, GameScene],
     backgroundColor: '#4488FF'
