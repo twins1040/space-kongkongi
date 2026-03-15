@@ -1,5 +1,8 @@
 import Phaser from 'phaser';
 
+const T = 64;        // PPU: 1타일 = 64px
+const W = T * 7.5;   // 480
+const H = T * 11.25; // 720
 
 class BootScene extends Phaser.Scene {
     constructor() {
@@ -61,24 +64,21 @@ class MenuScene extends Phaser.Scene {
     }
 
     create() {
-        const w = 480;
-        const h = 720;
+        // 배경
+        this.add.tileSprite(0, 0, W, H, 'backgrounds', 'background_solid_sky').setOrigin(0);
+        this.add.tileSprite(0, H - T * 6, W, T * 6, 'backgrounds', 'background_fade_hills').setOrigin(0).setAlpha(0.5);
+        this.add.tileSprite(0, H - T * 3, W, T * 3, 'backgrounds', 'background_color_hills').setOrigin(0).setAlpha(0.7);
 
-        // 배경 (GameScene과 동일)
-        this.add.tileSprite(0, 0, w, h, 'backgrounds', 'background_solid_sky').setOrigin(0);
-        this.add.tileSprite(0, 300, w, h - 300, 'backgrounds', 'background_fade_hills').setOrigin(0).setAlpha(0.5);
-        this.add.tileSprite(0, 500, w, h - 500, 'backgrounds', 'background_color_hills').setOrigin(0).setAlpha(0.7);
-
-        // 바닥 (GameScene과 동일)
-        for (let x = 0; x < w; x += 64) {
-            this.add.image(x + 32, h - 32, 'tiles', 'terrain_grass_block_top').setScale(0.5);
+        // 바닥
+        for (let x = 0; x < W; x += T) {
+            this.add.image(x + T / 2, H - T / 2, 'tiles', 'terrain_grass_block_top').setScale(0.5);
         }
 
         // 장식용 캐릭터
-        this.add.sprite(w / 2, h - 128, 'characters', 'character_beige_idle').setScale(0.5);
+        this.add.sprite(W / 2, H - T * 2, 'characters', 'character_beige_idle').setScale(0.5);
 
         // 타이틀
-        this.add.text(w / 2, 200, 'BUBBLE JUMP', {
+        this.add.text(W / 2, T * 3, 'BUBBLE JUMP', {
             fontSize: '36px',
             fontFamily: 'Arial Black, Arial',
             color: '#ffffff',
@@ -87,7 +87,7 @@ class MenuScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // "TAP TO START" 깜빡임
-        const tapText = this.add.text(w / 2, 300, 'TAP TO START', {
+        const tapText = this.add.text(W / 2, T * 5, 'TAP TO START', {
             fontSize: '20px',
             fontFamily: 'Arial',
             color: '#ffffff',
@@ -105,7 +105,7 @@ class MenuScene extends Phaser.Scene {
 
         // 최고 점수
         const best = localStorage.getItem('bubbleJump_highScore') || 0;
-        this.add.text(w / 2, 360, 'BEST: ' + Number(best).toLocaleString(), {
+        this.add.text(W / 2, T * 6, 'BEST: ' + Number(best).toLocaleString(), {
             fontSize: '16px',
             fontFamily: 'Arial',
             color: '#ffffff',
@@ -134,29 +134,32 @@ class GameScene extends Phaser.Scene {
     }
 
     create() {
-        const w = 480;
-        const h = 720;
+        // 그리드: row(0)=688(바닥), row(1)=624, row(3)=496, row(6)=304, row(9)=112
+        const row = (r) => H - T / 2 - r * T;
 
         // 배경
-        this.add.tileSprite(0, 0, w, h, 'backgrounds', 'background_solid_sky').setOrigin(0);
-        this.add.tileSprite(0, 300, w, h - 300, 'backgrounds', 'background_fade_hills').setOrigin(0).setAlpha(0.5);
-        this.add.tileSprite(0, 500, w, h - 500, 'backgrounds', 'background_color_hills').setOrigin(0).setAlpha(0.7);
+        this.add.tileSprite(0, 0, W, H, 'backgrounds', 'background_solid_sky').setOrigin(0);
+        this.add.tileSprite(0, row(6), W, H - row(6), 'backgrounds', 'background_fade_hills').setOrigin(0).setAlpha(0.5);
+        this.add.tileSprite(0, row(3), W, H - row(3), 'backgrounds', 'background_color_hills').setOrigin(0).setAlpha(0.7);
 
         // 바닥 (wrap-around 영역까지 확장)
         this.ground = this.physics.add.staticGroup();
-        for (let x = -128; x < w + 128; x += 64) {
-            const tile = this.ground.create(x + 32, h - 32, 'tiles', 'terrain_grass_block_top');
+        for (let x = -T * 2; x < W + T * 2; x += T) {
+            const tile = this.ground.create(x + T / 2, row(0), 'tiles', 'terrain_grass_block_top');
             tile.setScale(0.5).refreshBody();
         }
 
-        // 플랫폼 (one-way)
+        // 플랫폼 (one-way) — 그리드에 스냅
         this.platforms = this.physics.add.staticGroup();
-        this.createPlatform(160, 490);
-        this.createPlatform(320, 310);
-        this.createPlatform(160, 140);
+        this.platformDefs = [
+            { cx: T * 2.5, y: row(3) },
+            { cx: T * 5,   y: row(6) },
+            { cx: T * 2.5, y: row(9) },
+        ];
+        this.platformDefs.forEach(p => this.createPlatform(p.cx, p.y));
 
-        // 플레이어
-        this.player = this.physics.add.sprite(240, 500, 'characters', 'character_beige_idle');
+        // 플레이어 — 바닥 위 중앙
+        this.player = this.physics.add.sprite(W / 2, row(1), 'characters', 'character_beige_idle');
         this.player.setScale(0.5);
         this.player.body.setSize(160, 200);
         this.player.body.setOffset(48, 56);
@@ -218,7 +221,7 @@ class GameScene extends Phaser.Scene {
         }
 
         // 웨이브 표시
-        this.waveText = this.add.text(240, 24, 'WAVE 1', {
+        this.waveText = this.add.text(W / 2, 24, 'WAVE 1', {
             fontSize: '32px', fontFamily: 'Arial Black, Arial', color: '#ffffff',
             stroke: '#000000', strokeThickness: 6,
         }).setOrigin(0.5).setDepth(200).setScrollFactor(0);
@@ -265,14 +268,16 @@ class GameScene extends Phaser.Scene {
 
         // 콤보
         this.combo = 0;
-        this.comboText = this.add.text(240, 80, '', {
+        this.comboText = this.add.text(W / 2, 80, '', {
             fontSize: '40px', fontFamily: 'Arial Black, Arial', color: '#ffffff',
             stroke: '#000000', strokeThickness: 6
         }).setOrigin(0.5).setDepth(200).setAlpha(0);
 
-        // 아이템 블록
-        this.itemBlock = this.physics.add.staticImage(240, 290, 'tiles', 'block_exclamation_active').setScale(0.5);
-        this.itemBlock.body.setSize(128, 128);
+        // 아이템 블록 — 플랫폼2 왼쪽 1칸, 같은 높이 (그리드 스냅)
+        const blockX = this.platformDefs[1].cx - T * 2; // 플랫폼2 왼쪽 2칸
+        const blockY = this.platformDefs[0].y - T * 2; // 플랫폼1 위 2칸
+        this.itemBlock = this.physics.add.staticImage(blockX, blockY, 'tiles', 'block_exclamation_active').setScale(0.5);
+        this.itemBlock.refreshBody();
         this.itemBlockActive = true;
         this.physics.add.collider(this.player, this.itemBlock, this.hitItemBlock, null, this);
 
@@ -350,7 +355,7 @@ class GameScene extends Phaser.Scene {
         if (this.waveSpawnIndex >= this.waveEnemies.length) return;
         const type = this.waveEnemies[this.waveSpawnIndex++];
         const dir = Math.random() < 0.5 ? 1 : -1;
-        const startX = dir === 1 ? -32 : 512;
+        const startX = dir === 1 ? -T / 2 : W + T / 2;
 
         const groundTypes = ['slime','worm','mouse','ladybug','snail','slime_spike'];
         const airTypes = ['bee','fly'];
@@ -362,14 +367,12 @@ class GameScene extends Phaser.Scene {
             enemy.enemySpeed *= this.waveSpeedMult;
             enemy.setVelocityX(enemy.enemySpeed * dir);
         } else if (platformTypes.includes(type)) {
-            // 랜덤 플랫폼에 스폰
-            const platforms = [{cx: 160, y: 490}, {cx: 320, y: 310}, {cx: 160, y: 140}];
-            const plat = platforms[Math.floor(Math.random() * platforms.length)];
+            const plat = this.platformDefs[Math.floor(Math.random() * this.platformDefs.length)];
             const enemy = this.spawnEnemyOnPlatform(type, plat.cx, plat.y, dir);
             enemy.enemySpeed *= this.waveSpeedMult;
             enemy.setVelocityX(enemy.enemySpeed * enemy.enemyDir);
         } else {
-            const enemy = this.spawnEnemy(type, startX, 640, dir);
+            const enemy = this.spawnEnemy(type, startX, H - T * 1.5, dir);
             enemy.enemySpeed *= this.waveSpeedMult;
             enemy.setVelocityX(enemy.enemySpeed * dir);
         }
@@ -401,7 +404,7 @@ class GameScene extends Phaser.Scene {
         else itemType = 'spring';
 
         const frames = { coin: 'coin_gold', heart: 'heart', star: 'star', spring: 'spring' };
-        const item = this.items.create(240, 260, 'tiles', frames[itemType]);
+        const item = this.items.create(this.itemBlock.x, this.itemBlock.y - T, 'tiles', frames[itemType]);
         item.setScale(0.5);
         item.itemType = itemType;
         item.setVelocityY(-200);
@@ -440,7 +443,7 @@ class GameScene extends Phaser.Scene {
             this.sound.play('sfx_magic');
             this.springActive = true;
             // 시각적 표시
-            const springTxt = this.add.text(240, 120, 'SPRING!', {
+            const springTxt = this.add.text(W / 2, 120, 'SPRING!', {
                 fontSize: '24px', fontFamily: 'Arial Black, Arial', color: '#00ffff',
                 stroke: '#000', strokeThickness: 4
             }).setOrigin(0.5).setDepth(200);
@@ -487,13 +490,13 @@ class GameScene extends Phaser.Scene {
         const noDmgBonus = this.waveDamageTaken ? 0 : 500;
         this.addScore(bonus + noDmgBonus);
 
-        const clearText = this.add.text(240, 300, 'WAVE ' + this.waveNum + ' CLEAR!', {
+        const clearText = this.add.text(W / 2, 300, 'WAVE ' + this.waveNum + ' CLEAR!', {
             fontSize: '36px', fontFamily: 'Arial Black, Arial', color: '#ffffff',
             stroke: '#000000', strokeThickness: 6
         }).setOrigin(0.5).setDepth(200);
 
         if (noDmgBonus > 0) {
-            const perfectText = this.add.text(240, 350, 'NO DAMAGE +500', {
+            const perfectText = this.add.text(W / 2, 350, 'NO DAMAGE +500', {
                 fontSize: '20px', fontFamily: 'Arial Black, Arial', color: '#00ff00',
                 stroke: '#000000', strokeThickness: 4
             }).setOrigin(0.5).setDepth(200);
@@ -828,8 +831,8 @@ class GameScene extends Phaser.Scene {
         }
 
         // Wrap-around (플레이어)
-        if (player.x < -32) player.x = 512;
-        else if (player.x > 512) player.x = -32;
+        if (player.x < -T / 2) player.x = W + T / 2;
+        else if (player.x > W + T / 2) player.x = -T / 2;
 
         // 적 업데이트
         this.enemies.getChildren().forEach(enemy => {
@@ -837,8 +840,8 @@ class GameScene extends Phaser.Scene {
 
             if (enemy.isGround) {
                 // wrap-around
-                if (enemy.x < -32) enemy.x = 512;
-                else if (enemy.x > 512) enemy.x = -32;
+                if (enemy.x < -T / 2) enemy.x = W + T / 2;
+                else if (enemy.x > W + T / 2) enemy.x = -T / 2;
                 // 벽 반전
                 if (enemy.body.blocked.right || enemy.body.touching.right) {
                     enemy.enemyDir = -1;
@@ -863,8 +866,8 @@ class GameScene extends Phaser.Scene {
                 }
             } else {
                 // 공중 적: wrap-around
-                if (enemy.x < -32) enemy.x = 512;
-                else if (enemy.x > 512) enemy.x = -32;
+                if (enemy.x < -T / 2) enemy.x = W + T / 2;
+                else if (enemy.x > W + T / 2) enemy.x = -T / 2;
                 // 벌: 사인파
                 if (enemy.enemyType === 'bee') {
                     enemy.flyTime += 0.03;
@@ -894,8 +897,8 @@ class GameScene extends Phaser.Scene {
 // Phaser 설정
 const config = {
     type: Phaser.AUTO,
-    width: 480,
-    height: 720,
+    width: W,
+    height: H,
     parent: 'game',
     scale: {
         mode: Phaser.Scale.FIT,
