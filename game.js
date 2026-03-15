@@ -270,10 +270,12 @@ class GameScene extends Phaser.Scene {
             stroke: '#000000', strokeThickness: 6
         }).setOrigin(0.5).setDepth(200).setAlpha(0);
 
-        // 테스트용 적 스폰
-        this.spawnEnemy('slime', -32, 640, 1);
-        this.spawnEnemy('worm', 512, 640, -1);
-        this.spawnEnemy('slime', 512, 460, -1);
+        // 테스트용 적 스폰 (콤보 테스트 가능하도록 밀집 배치)
+        this.spawnEnemy('slime', 100, 640, 1);
+        this.spawnEnemy('worm', 200, 640, -1);
+        this.spawnEnemy('slime', 300, 640, 1);
+        this.spawnEnemy('slime', 150, 460, 1);
+        this.spawnEnemy('worm', 300, 460, -1);
     }
 
     addScore(amount) {
@@ -325,6 +327,7 @@ class GameScene extends Phaser.Scene {
             this.killEnemy(enemy);
             player.setVelocityY(-350);
             this.sound.play('sfx_jump_high');
+            this._comboProtect = true;
         } else {
             this.hitPlayer(player, enemy);
         }
@@ -498,8 +501,10 @@ class GameScene extends Phaser.Scene {
             this.sound.play('sfx_jump');
         }
 
-        // 착지 시 콤보 리셋
-        if (onFloor && this.combo > 0) {
+        // 착지 시 콤보 리셋 (밟기 직후 프레임은 보호)
+        if (this._comboProtect) {
+            if (!onFloor) this._comboProtect = false;
+        } else if (onFloor && this.combo > 0) {
             if (this.combo >= 2) {
                 this.tweens.add({
                     targets: this.comboText,
