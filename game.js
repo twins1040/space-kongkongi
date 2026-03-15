@@ -74,22 +74,10 @@ class MenuScene extends Phaser.Scene {
             this.add.image(x + T / 2, H - T / 2, 'tiles', 'terrain_grass_block_top').setScale(0.5);
         }
 
-        // 장식용 적 (바닥 위 걸어다니기)
-        this.anims.create({ key: 'menu_slime', frames: [{ key: 'enemies', frame: 'slime_normal_walk_a' }, { key: 'enemies', frame: 'slime_normal_walk_b' }], frameRate: 8, repeat: -1 });
-        this.anims.create({ key: 'menu_bee', frames: [{ key: 'enemies', frame: 'bee_a' }, { key: 'enemies', frame: 'bee_b' }], frameRate: 10, repeat: -1 });
-
-        const slime1 = this.add.sprite(T, H - T * 1.5, 'enemies', 'slime_normal_walk_a').setScale(0.5);
-        slime1.anims.play('menu_slime');
-        this.tweens.add({ targets: slime1, x: W - T, duration: 4000, yoyo: true, repeat: -1 });
-
-        const slime2 = this.add.sprite(W - T, H - T * 1.5, 'enemies', 'slime_normal_walk_a').setScale(0.5).setFlipX(true);
-        slime2.anims.play('menu_slime');
-        this.tweens.add({ targets: slime2, x: T, duration: 5000, yoyo: true, repeat: -1 });
-
-        const bee = this.add.sprite(T * 2, T * 6, 'enemies', 'bee_a').setScale(0.5);
-        bee.anims.play('menu_bee');
-        this.tweens.add({ targets: bee, x: W - T * 2, duration: 3000, yoyo: true, repeat: -1 });
-        this.tweens.add({ targets: bee, y: T * 5.5, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+        // 장식용 환경
+        this.add.image(T * 1.5, H - T * 1.5, 'tiles', 'bush').setScale(0.5);
+        this.add.image(W - T * 1.5, H - T * 1.5, 'tiles', 'bush').setScale(0.5);
+        this.add.image(T * 5, H - T * 1.5, 'tiles', 'mushroom_red').setScale(0.5);
 
         // 장식용 캐릭터 (점프 애니메이션)
         const char = this.add.sprite(W / 2, H - T * 2, 'characters', 'character_beige_idle').setScale(0.5);
@@ -125,8 +113,9 @@ class MenuScene extends Phaser.Scene {
 
         this.tweens.add({
             targets: title,
-            y: T * 3 - 8,
-            duration: 1200,
+            scaleX: 1.05,
+            scaleY: 1.05,
+            duration: 1500,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut'
