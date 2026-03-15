@@ -214,21 +214,21 @@ class GameScene extends Phaser.Scene {
         // 체력 하트
         this.hearts = [];
         for (let i = 0; i < 3; i++) {
-            const heart = this.add.image(20 + i * 28, 20, 'tiles', 'hud_heart').setScale(0.25).setDepth(200).setScrollFactor(0);
+            const heart = this.add.image(36 + i * 40, 24, 'tiles', 'hud_heart').setScale(0.5).setDepth(200).setScrollFactor(0);
             this.hearts.push(heart);
         }
 
         // 웨이브 표시
-        this.waveText = this.add.text(240, 20, 'WAVE 1', {
-            fontSize: '16px', fontFamily: 'Arial', color: '#ffffff',
-            stroke: '#000000', strokeThickness: 3
+        this.waveText = this.add.text(240, 24, 'WAVE 1', {
+            fontSize: '32px', fontFamily: 'Arial Black, Arial', color: '#ffffff',
+            stroke: '#000000', strokeThickness: 6,
         }).setOrigin(0.5).setDepth(200).setScrollFactor(0);
 
         // 점수 표시
-        this.scoreIcon = this.add.image(440, 20, 'tiles', 'hud_coin').setScale(0.25).setDepth(200).setScrollFactor(0);
-        this.scoreText = this.add.text(428, 20, '0', {
-            fontSize: '16px', fontFamily: 'Arial', color: '#ffffff',
-            stroke: '#000000', strokeThickness: 3
+        this.scoreIcon = this.add.image(448, 24, 'tiles', 'hud_coin').setScale(0.5).setDepth(200).setScrollFactor(0);
+        this.scoreText = this.add.text(420, 24, '0', {
+            fontSize: '32px', fontFamily: 'Arial Black, Arial', color: '#ffffff',
+            stroke: '#000000', strokeThickness: 6,
         }).setOrigin(1, 0.5).setDepth(200).setScrollFactor(0);
 
         // 적 그룹
@@ -517,7 +517,8 @@ const config = {
         activePointers: 3
     },
     scene: [BootScene, LoadScene, MenuScene, GameScene],
-    backgroundColor: '#4488FF'
+    backgroundColor: '#4488FF',
+    resolution: window.devicePixelRatio
 };
 
 const game = new Phaser.Game(config);
