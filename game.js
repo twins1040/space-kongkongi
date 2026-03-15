@@ -934,8 +934,9 @@ class GameScene extends Phaser.Scene {
             player.setVelocityX(0);
         }
 
-        // 점프
-        if (jumpDown && onFloor) {
+        // 점프 (바운스 중에도 허용)
+        const canJump = onFloor || this._comboProtect;
+        if (jumpDown && canJump) {
             if (this.springActive) {
                 player.setVelocityY(-840);
                 this.springActive = false;
