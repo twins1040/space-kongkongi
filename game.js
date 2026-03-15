@@ -262,9 +262,10 @@ class GameScene extends Phaser.Scene {
             });
         });
 
-        // 피격 상태
+        // 게임 상태
         this.hp = 3;
         this.isInvincible = false;
+        this.isGameOver = false;
 
         // 콤보
         this.combo = 0;
@@ -742,8 +743,82 @@ class GameScene extends Phaser.Scene {
         });
 
         if (this.hp <= 0) {
-            // 게임오버 (단계 11에서 구현)
+            this.gameOver();
         }
+    }
+
+    gameOver() {
+        this.isGameOver = true;
+        this.physics.pause();
+        if (this.waveSpawnTimer) this.waveSpawnTimer.remove();
+
+        // 플레이어 사망 연출
+        this.player.anims.stop();
+        this.player.setFrame('character_beige_hit');
+        this.player.setAlpha(1);
+
+        // 1초 후 게임오버 UI
+        this.time.delayedCall(1000, () => {
+            // 어두운 오버레이
+            this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.6).setDepth(300);
+
+            // GAME OVER 텍스트
+            const goText = this.add.text(W / 2, H / 2 - T * 2, 'GAME OVER', {
+                fontSize: '48px', fontFamily: 'Arial Black, Arial', color: '#ff4444',
+                stroke: '#000000', strokeThickness: 6
+            }).setOrigin(0.5).setDepth(301).setScale(0);
+
+            this.tweens.add({
+                targets: goText,
+                scaleX: 1, scaleY: 1,
+                duration: 500,
+                ease: 'Back.easeOut'
+            });
+
+            // 최종 점수
+            this.add.text(W / 2, H / 2 - T * 0.5, 'SCORE: ' + this.score.toLocaleString(), {
+                fontSize: '28px', fontFamily: 'Arial Black, Arial', color: '#ffffff',
+                stroke: '#000000', strokeThickness: 4
+            }).setOrigin(0.5).setDepth(301);
+
+            // 최고 웨이브
+            this.add.text(W / 2, H / 2 + T * 0.5, 'WAVE: ' + this.waveNum, {
+                fontSize: '24px', fontFamily: 'Arial Black, Arial', color: '#ffffff',
+                stroke: '#000000', strokeThickness: 4
+            }).setOrigin(0.5).setDepth(301);
+
+            // 최고 점수 갱신
+            const best = Number(localStorage.getItem('bubbleJump_highScore') || 0);
+            if (this.score > best) {
+                localStorage.setItem('bubbleJump_highScore', this.score);
+                this.add.text(W / 2, H / 2 + T * 1.5, 'NEW BEST!', {
+                    fontSize: '28px', fontFamily: 'Arial Black, Arial', color: '#ffff00',
+                    stroke: '#000000', strokeThickness: 4
+                }).setOrigin(0.5).setDepth(301);
+            }
+
+            // TAP TO RESTART
+            this.time.delayedCall(2000, () => {
+                const restartText = this.add.text(W / 2, H / 2 + T * 3, 'TAP TO RESTART', {
+                    fontSize: '20px', fontFamily: 'Arial', color: '#ffffff',
+                    stroke: '#000000', strokeThickness: 3
+                }).setOrigin(0.5).setDepth(301);
+
+                this.tweens.add({
+                    targets: restartText,
+                    alpha: 0, duration: 500, yoyo: true, repeat: -1
+                });
+
+                this.input.once('pointerdown', () => {
+                    this.sound.play('sfx_select');
+                    this.scene.restart();
+                });
+                this.input.keyboard.once('keydown', () => {
+                    this.sound.play('sfx_select');
+                    this.scene.restart();
+                });
+            });
+        });
     }
 
     createPlatform(cx, y) {
@@ -759,6 +834,7 @@ class GameScene extends Phaser.Scene {
     }
 
     update() {
+        if (this.isGameOver) return;
         const player = this.player;
         const onFloor = player.body.blocked.down || player.body.touching.down;
 
