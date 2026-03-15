@@ -212,8 +212,6 @@ class GameScene extends Phaser.Scene {
         brickL.refreshBody();
         const brickR = this.brickGroup.create(midCx + T, midY, 'tiles', 'bricks_brown').setScale(0.5);
         brickR.refreshBody();
-        this.physics.add.collider(this.player, this.brickGroup);
-
         // 플레이어 — 바닥 위 중앙
         this.player = this.physics.add.sprite(W / 2, row(2), 'characters', 'character_beige_idle');
         this.player.setScale(0.5);
@@ -235,6 +233,7 @@ class GameScene extends Phaser.Scene {
         // 충돌
         this.physics.add.collider(this.player, this.ground);
         this.physics.add.collider(this.player, this.platforms);
+        this.physics.add.collider(this.player, this.brickGroup);
 
         // 키보드
         this.cursors = this.input.keyboard.createCursorKeys();
