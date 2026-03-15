@@ -107,7 +107,7 @@ class MenuScene extends Phaser.Scene {
         // 타이틀 (바운스 애니메이션)
         const title = this.add.text(W / 2, T * 3, '우주에서온\n콩콩이', {
             fontSize: '44px',
-            fontFamily: 'Arial Black, Arial',
+            fontFamily: 'Jua, sans-serif',
             color: '#ffe844',
             stroke: '#000000',
             strokeThickness: 8,
@@ -128,7 +128,7 @@ class MenuScene extends Phaser.Scene {
         // "TAP TO START" 깜빡임
         const tapText = this.add.text(W / 2, T * 5.5, 'TAP TO START', {
             fontSize: '28px',
-            fontFamily: 'Arial Black, Arial',
+            fontFamily: 'Jua, sans-serif',
             color: '#ffffff',
             stroke: '#000000',
             strokeThickness: 6,
@@ -147,7 +147,7 @@ class MenuScene extends Phaser.Scene {
         const best = localStorage.getItem('bubbleJump_highScore') || 0;
         this.add.text(W / 2, T * 7, 'BEST: ' + Number(best).toLocaleString(), {
             fontSize: '24px',
-            fontFamily: 'Arial Black, Arial',
+            fontFamily: 'Jua, sans-serif',
             color: '#ffffff',
             stroke: '#000000',
             strokeThickness: 4,
@@ -267,14 +267,14 @@ class GameScene extends Phaser.Scene {
 
         // 웨이브 표시
         this.waveText = this.add.text(W / 2, 24, 'WAVE 1', {
-            fontSize: '32px', fontFamily: 'Arial Black, Arial', color: '#ffffff',
+            fontSize: '32px', fontFamily: 'Jua, sans-serif', color: '#ffffff',
             stroke: '#000000', strokeThickness: 6,
         }).setOrigin(0.5).setDepth(200).setScrollFactor(0);
 
         // 점수 표시
         this.scoreIcon = this.add.image(448, 24, 'tiles', 'hud_coin').setScale(0.5).setDepth(200).setScrollFactor(0);
         this.scoreText = this.add.text(420, 24, '0', {
-            fontSize: '32px', fontFamily: 'Arial Black, Arial', color: '#ffffff',
+            fontSize: '32px', fontFamily: 'Jua, sans-serif', color: '#ffffff',
             stroke: '#000000', strokeThickness: 6,
         }).setOrigin(1, 0.5).setDepth(200).setScrollFactor(0);
 
@@ -315,7 +315,7 @@ class GameScene extends Phaser.Scene {
         // 콤보
         this.combo = 0;
         this.comboText = this.add.text(W / 2, 80, '', {
-            fontSize: '40px', fontFamily: 'Arial Black, Arial', color: '#ffffff',
+            fontSize: '40px', fontFamily: 'Jua, sans-serif', color: '#ffffff',
             stroke: '#000000', strokeThickness: 6
         }).setOrigin(0.5).setDepth(200).setAlpha(0);
 
@@ -490,7 +490,7 @@ class GameScene extends Phaser.Scene {
             this.springActive = true;
             // 시각적 표시
             const springTxt = this.add.text(W / 2, 120, 'SPRING!', {
-                fontSize: '24px', fontFamily: 'Arial Black, Arial', color: '#00ffff',
+                fontSize: '24px', fontFamily: 'Jua, sans-serif', color: '#00ffff',
                 stroke: '#000', strokeThickness: 4
             }).setOrigin(0.5).setDepth(200);
             this.tweens.add({ targets: springTxt, alpha: 0, delay: 1000, duration: 300, onComplete: () => springTxt.destroy() });
@@ -537,13 +537,13 @@ class GameScene extends Phaser.Scene {
         this.addScore(bonus + noDmgBonus);
 
         const clearText = this.add.text(W / 2, 300, 'WAVE ' + this.waveNum + ' CLEAR!', {
-            fontSize: '36px', fontFamily: 'Arial Black, Arial', color: '#ffffff',
+            fontSize: '36px', fontFamily: 'Jua, sans-serif', color: '#ffffff',
             stroke: '#000000', strokeThickness: 6
         }).setOrigin(0.5).setDepth(200);
 
         if (noDmgBonus > 0) {
             const perfectText = this.add.text(W / 2, 350, 'NO DAMAGE +500', {
-                fontSize: '20px', fontFamily: 'Arial Black, Arial', color: '#00ff00',
+                fontSize: '20px', fontFamily: 'Jua, sans-serif', color: '#00ff00',
                 stroke: '#000000', strokeThickness: 4
             }).setOrigin(0.5).setDepth(200);
             this.tweens.add({ targets: perfectText, alpha: 0, delay: 1200, duration: 300, onComplete: () => perfectText.destroy() });
@@ -663,7 +663,7 @@ class GameScene extends Phaser.Scene {
                 this.updateComboDisplay();
                 // 점수 팝업 (1단계)
                 const scoreTxt = this.add.text(enemy.x, enemy.y - 20, '+50', {
-                    fontSize: '20px', fontFamily: 'Arial Black, Arial', color: '#ffff00',
+                    fontSize: '20px', fontFamily: 'Jua, sans-serif', color: '#ffff00',
                     stroke: '#000', strokeThickness: 4
                 }).setOrigin(0.5).setDepth(50);
                 this.tweens.add({ targets: scoreTxt, y: scoreTxt.y - 40, alpha: 0, duration: 800, onComplete: () => scoreTxt.destroy() });
@@ -727,7 +727,7 @@ class GameScene extends Phaser.Scene {
         // 점수 팝업
         const label = multiplier > 1 ? '+' + points + ' ×' + multiplier : '+' + points;
         const scoreTxt = this.add.text(enemy.x, enemy.y - 20, label, {
-            fontSize: '20px', fontFamily: 'Arial Black, Arial', color: '#ffff00',
+            fontSize: '20px', fontFamily: 'Jua, sans-serif', color: '#ffff00',
             stroke: '#000', strokeThickness: 4
         }).setOrigin(0.5).setDepth(50);
 
@@ -809,7 +809,7 @@ class GameScene extends Phaser.Scene {
 
             // GAME OVER 텍스트
             const goText = this.add.text(W / 2, H / 2 - T * 2, 'GAME OVER', {
-                fontSize: '48px', fontFamily: 'Arial Black, Arial', color: '#ff4444',
+                fontSize: '48px', fontFamily: 'Jua, sans-serif', color: '#ff4444',
                 stroke: '#000000', strokeThickness: 6
             }).setOrigin(0.5).setDepth(301).setScale(0);
 
@@ -822,13 +822,13 @@ class GameScene extends Phaser.Scene {
 
             // 최종 점수
             this.add.text(W / 2, H / 2 - T * 0.5, 'SCORE: ' + this.score.toLocaleString(), {
-                fontSize: '28px', fontFamily: 'Arial Black, Arial', color: '#ffffff',
+                fontSize: '28px', fontFamily: 'Jua, sans-serif', color: '#ffffff',
                 stroke: '#000000', strokeThickness: 4
             }).setOrigin(0.5).setDepth(301);
 
             // 최고 웨이브
             this.add.text(W / 2, H / 2 + T * 0.5, 'WAVE: ' + this.waveNum, {
-                fontSize: '24px', fontFamily: 'Arial Black, Arial', color: '#ffffff',
+                fontSize: '24px', fontFamily: 'Jua, sans-serif', color: '#ffffff',
                 stroke: '#000000', strokeThickness: 4
             }).setOrigin(0.5).setDepth(301);
 
@@ -837,7 +837,7 @@ class GameScene extends Phaser.Scene {
             if (this.score > best) {
                 localStorage.setItem('bubbleJump_highScore', this.score);
                 this.add.text(W / 2, H / 2 + T * 1.5, 'NEW BEST!', {
-                    fontSize: '28px', fontFamily: 'Arial Black, Arial', color: '#ffff00',
+                    fontSize: '28px', fontFamily: 'Jua, sans-serif', color: '#ffff00',
                     stroke: '#000000', strokeThickness: 4
                 }).setOrigin(0.5).setDepth(301);
             }
@@ -845,7 +845,7 @@ class GameScene extends Phaser.Scene {
             // TAP TO RESTART
             this.time.delayedCall(2000, () => {
                 const restartText = this.add.text(W / 2, H / 2 + T * 3, 'TAP TO RESTART', {
-                    fontSize: '20px', fontFamily: 'Arial', color: '#ffffff',
+                    fontSize: '20px', fontFamily: 'Jua, sans-serif', color: '#ffffff',
                     stroke: '#000000', strokeThickness: 3
                 }).setOrigin(0.5).setDepth(301);
 
