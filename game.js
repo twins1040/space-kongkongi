@@ -213,7 +213,6 @@ class GameScene extends Phaser.Scene {
         const brickR = this.brickGroup.create(midCx + T, midY, 'tiles', 'bricks_brown').setScale(0.5);
         brickR.refreshBody();
         this.physics.add.collider(this.player, this.brickGroup);
-        this.physics.add.collider(this.enemies, this.brickGroup);
 
         // 플레이어 — 바닥 위 중앙
         this.player = this.physics.add.sprite(W / 2, row(2), 'characters', 'character_beige_idle');
@@ -294,6 +293,7 @@ class GameScene extends Phaser.Scene {
         this.enemies = this.physics.add.group();
         this.physics.add.collider(this.enemies, this.ground);
         this.physics.add.collider(this.enemies, this.platforms);
+        this.physics.add.collider(this.enemies, this.brickGroup);
 
         // 플레이어 ↔ 적 overlap
         this.physics.add.overlap(this.player, this.enemies, this.handleEnemyContact, null, this);
