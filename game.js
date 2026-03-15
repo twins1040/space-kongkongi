@@ -159,7 +159,7 @@ class GameScene extends Phaser.Scene {
         this.platformDefs.forEach(p => this.createPlatform(p.cx, p.y));
 
         // 플레이어 — 바닥 위 중앙
-        this.player = this.physics.add.sprite(W / 2, row(1), 'characters', 'character_beige_idle');
+        this.player = this.physics.add.sprite(W / 2, row(2), 'characters', 'character_beige_idle');
         this.player.setScale(0.5);
         this.player.body.setSize(160, 200);
         this.player.body.setOffset(48, 56);
@@ -535,15 +535,15 @@ class GameScene extends Phaser.Scene {
 
     spawnEnemy(type, x, y, dir) {
         const configs = {
-            slime:       { anim: 'slime_walk',       frame: 'slime_normal_walk_a',  speed: 60,  bodyW: 80, bodyH: 56, offX: 24, offY: 40, score: 100, ground: true },
-            worm:        { anim: 'worm_walk',        frame: 'worm_normal_move_a',   speed: 40,  bodyW: 80, bodyH: 50, offX: 24, offY: 46, score: 50,  ground: true },
-            mouse:       { anim: 'mouse_walk',       frame: 'mouse_walk_a',         speed: 120, bodyW: 88, bodyH: 56, offX: 20, offY: 40, score: 150, ground: true },
-            ladybug:     { anim: 'ladybug_walk',     frame: 'ladybug_walk_a',       speed: 80,  bodyW: 80, bodyH: 56, offX: 24, offY: 40, score: 100, ground: true },
-            snail:       { anim: 'snail_walk',       frame: 'snail_walk_a',         speed: 30,  bodyW: 88, bodyH: 56, offX: 20, offY: 40, score: 50,  ground: true },
-            bee:         { anim: 'bee_fly',           frame: 'bee_a',               speed: 70,  bodyW: 64, bodyH: 64, offX: 32, offY: 32, score: 200, ground: false },
-            fly:         { anim: 'fly_fly',           frame: 'fly_a',               speed: 100, bodyW: 64, bodyH: 56, offX: 32, offY: 36, score: 150, ground: false },
-            saw:         { anim: 'saw_spin',          frame: 'saw_a',               speed: 50,  bodyW: 80, bodyH: 80, offX: 24, offY: 24, score: 0,   ground: true, unstompable: true },
-            slime_spike: { anim: 'slime_spike_walk',  frame: 'slime_spike_walk_a',  speed: 50,  bodyW: 80, bodyH: 56, offX: 24, offY: 40, score: 0,   ground: true, unstompable: true },
+            slime:       { anim: 'slime_walk',       frame: 'slime_normal_walk_a',  speed: 60,  bodyW: 80, bodyH: 56, offX: 24, offY: 72,  score: 100, ground: true },
+            worm:        { anim: 'worm_walk',        frame: 'worm_normal_move_a',   speed: 40,  bodyW: 80, bodyH: 50, offX: 24, offY: 78,  score: 50,  ground: true },
+            mouse:       { anim: 'mouse_walk',       frame: 'mouse_walk_a',         speed: 120, bodyW: 88, bodyH: 56, offX: 20, offY: 72,  score: 150, ground: true },
+            ladybug:     { anim: 'ladybug_walk',     frame: 'ladybug_walk_a',       speed: 80,  bodyW: 80, bodyH: 56, offX: 24, offY: 72,  score: 100, ground: true },
+            snail:       { anim: 'snail_walk',       frame: 'snail_walk_a',         speed: 30,  bodyW: 88, bodyH: 56, offX: 20, offY: 72,  score: 50,  ground: true },
+            bee:         { anim: 'bee_fly',           frame: 'bee_a',               speed: 70,  bodyW: 64, bodyH: 64, offX: 32, offY: 32,  score: 200, ground: false },
+            fly:         { anim: 'fly_fly',           frame: 'fly_a',               speed: 100, bodyW: 64, bodyH: 56, offX: 32, offY: 36,  score: 150, ground: false },
+            saw:         { anim: 'saw_spin',          frame: 'saw_a',               speed: 50,  bodyW: 80, bodyH: 80, offX: 24, offY: 48,  score: 0,   ground: true, unstompable: true },
+            slime_spike: { anim: 'slime_spike_walk',  frame: 'slime_spike_walk_a',  speed: 50,  bodyW: 80, bodyH: 56, offX: 24, offY: 72,  score: 0,   ground: true, unstompable: true },
         };
         const cfg = configs[type];
         const enemy = this.enemies.create(x, y, 'enemies', cfg.frame);
@@ -792,6 +792,7 @@ class GameScene extends Phaser.Scene {
                          Phaser.Input.Keyboard.JustDown(this.wasd.up) ||
                          Phaser.Input.Keyboard.JustDown(this.wasd.space) ||
                          this.touchJump;
+        this.touchJump = false;
 
         if (leftDown) {
             player.setVelocityX(-200);
@@ -813,7 +814,6 @@ class GameScene extends Phaser.Scene {
                 player.setVelocityY(-620);
                 this.sound.play('sfx_jump');
             }
-            this.touchJump = false;
         }
 
         // 착지 시 콤보 리셋 (밟기 직후 프레임은 보호)
