@@ -209,7 +209,6 @@ class GameScene extends Phaser.Scene {
 
         // HUD
         this.score = 0;
-        this.waveNum = 1;
 
         // 체력 하트
         this.hearts = [];
@@ -271,15 +270,134 @@ class GameScene extends Phaser.Scene {
             stroke: '#000000', strokeThickness: 6
         }).setOrigin(0.5).setDepth(200).setAlpha(0);
 
-        // 테스트용 적 스폰
-        this.spawnEnemy('slime', -32, 640, 1);
-        this.spawnEnemy('mouse', 512, 640, -1);
-        this.spawnEnemy('ladybug', -32, 640, 1);
-        this.spawnEnemyOnPlatform('snail', 160, 490, 1);
-        this.spawnEnemy('bee', -32, 200, 1);
-        this.spawnEnemy('fly', 512, 350, -1);
-        this.spawnEnemyOnPlatform('saw', 320, 310, -1);
-        this.spawnEnemy('slime_spike', 512, 640, -1);
+        // 웨이브 시스템
+        this.waveNum = 1;
+        this.waveEnemies = [];
+        this.waveSpawnIndex = 0;
+        this.waveSpawnTimer = null;
+        this.waveKills = 0;
+        this.waveTotalEnemies = 0;
+        this.waveDamageTaken = false;
+        this.startWave(1);
+    }
+
+    getWaveConfig(wave) {
+        const waves = [
+            null,
+            { enemies: ['worm','worm','worm','slime','slime'], interval: 2000 },
+            { enemies: ['slime','slime','slime','worm','worm','ladybug'], interval: 1800 },
+            { enemies: ['slime','slime','ladybug','ladybug','bee','bee','snail'], interval: 1600 },
+            { enemies: ['mouse','mouse','bee','bee','fly','fly','slime','slime'], interval: 1500 },
+            { enemies: ['mouse','mouse','fly','fly','saw','slime','slime','bee','bee'], interval: 1300 },
+            { enemies: ['slime_spike','slime_spike','saw','mouse','mouse','bee','bee','bee','fly','fly'], interval: 1200 },
+        ];
+        if (wave <= 6) return { ...waves[wave], speedMult: wave <= 3 ? 1.0 : 1.0 + (wave - 3) * 0.1 };
+
+        // 웨이브 7+: 전 종류 랜덤
+        const pool = ['slime','worm','mouse','ladybug','snail','bee','fly'];
+        const hazards = ['saw','slime_spike'];
+        const count = 10 + (wave - 7);
+        const enemies = [];
+        for (let i = 0; i < count; i++) enemies.push(pool[Math.floor(Math.random() * pool.length)]);
+        // 위험 적 최대 2마리
+        const hazardCount = Math.min(2, Math.floor((wave - 5) / 2));
+        for (let i = 0; i < hazardCount; i++) enemies.push(hazards[i % 2]);
+        return { enemies, interval: 1000, speedMult: Math.min(2.0, 1.0 + (wave - 1) * 0.05) };
+    }
+
+    startWave(wave) {
+        this.waveNum = wave;
+        this.waveText.setText('WAVE ' + wave);
+        this.waveDamageTaken = false;
+
+        const cfg = this.getWaveConfig(wave);
+        this.waveEnemies = [...cfg.enemies];
+        this.waveSpawnIndex = 0;
+        this.waveKills = 0;
+        this.waveTotalEnemies = this.waveEnemies.length;
+        this.waveSpeedMult = cfg.speedMult;
+
+        // 순차 스폰
+        this.waveSpawnTimer = this.time.addEvent({
+            delay: cfg.interval,
+            repeat: this.waveTotalEnemies - 1,
+            callback: () => this.spawnWaveEnemy()
+        });
+        // 첫 적 즉시 스폰
+        this.spawnWaveEnemy();
+    }
+
+    spawnWaveEnemy() {
+        if (this.waveSpawnIndex >= this.waveEnemies.length) return;
+        const type = this.waveEnemies[this.waveSpawnIndex++];
+        const dir = Math.random() < 0.5 ? 1 : -1;
+        const startX = dir === 1 ? -32 : 512;
+
+        const groundTypes = ['slime','worm','mouse','ladybug','snail','slime_spike'];
+        const airTypes = ['bee','fly'];
+        const platformTypes = ['saw'];
+
+        if (airTypes.includes(type)) {
+            const y = 100 + Math.random() * 300;
+            const enemy = this.spawnEnemy(type, startX, y, dir);
+            enemy.enemySpeed *= this.waveSpeedMult;
+            enemy.setVelocityX(enemy.enemySpeed * dir);
+        } else if (platformTypes.includes(type)) {
+            // 랜덤 플랫폼에 스폰
+            const platforms = [{cx: 160, y: 490}, {cx: 320, y: 310}, {cx: 160, y: 140}];
+            const plat = platforms[Math.floor(Math.random() * platforms.length)];
+            const enemy = this.spawnEnemyOnPlatform(type, plat.cx, plat.y, dir);
+            enemy.enemySpeed *= this.waveSpeedMult;
+            enemy.setVelocityX(enemy.enemySpeed * enemy.enemyDir);
+        } else {
+            const enemy = this.spawnEnemy(type, startX, 640, dir);
+            enemy.enemySpeed *= this.waveSpeedMult;
+            enemy.setVelocityX(enemy.enemySpeed * dir);
+        }
+    }
+
+    checkWaveClear() {
+        // 스폰 완료 확인
+        if (this.waveSpawnIndex < this.waveTotalEnemies) return;
+        // 처치 가능한 적이 남아있는지 확인
+        const alive = this.enemies.getChildren().filter(e => !e.isDying && !e.unstompable);
+        if (alive.length > 0) return;
+
+        // 밟기 불가 적 제거
+        this.enemies.getChildren().filter(e => !e.isDying && e.unstompable).forEach(e => {
+            e.isDying = true;
+            e.body.enable = false;
+            this.tweens.add({ targets: e, alpha: 0, duration: 500, onComplete: () => e.destroy() });
+        });
+
+        // 웨이브 클리어
+        const bonus = this.waveNum * 300;
+        const noDmgBonus = this.waveDamageTaken ? 0 : 500;
+        this.addScore(bonus + noDmgBonus);
+
+        const clearText = this.add.text(240, 300, 'WAVE ' + this.waveNum + ' CLEAR!', {
+            fontSize: '36px', fontFamily: 'Arial Black, Arial', color: '#ffffff',
+            stroke: '#000000', strokeThickness: 6
+        }).setOrigin(0.5).setDepth(200);
+
+        if (noDmgBonus > 0) {
+            const perfectText = this.add.text(240, 350, 'NO DAMAGE +500', {
+                fontSize: '20px', fontFamily: 'Arial Black, Arial', color: '#00ff00',
+                stroke: '#000000', strokeThickness: 4
+            }).setOrigin(0.5).setDepth(200);
+            this.tweens.add({ targets: perfectText, alpha: 0, delay: 1200, duration: 300, onComplete: () => perfectText.destroy() });
+        }
+
+        this.tweens.add({
+            targets: clearText,
+            alpha: 0,
+            delay: 1200,
+            duration: 300,
+            onComplete: () => {
+                clearText.destroy();
+                this.startWave(this.waveNum + 1);
+            }
+        });
     }
 
     addScore(amount) {
@@ -463,6 +581,10 @@ class GameScene extends Phaser.Scene {
 
         this.sound.play('sfx_disappear');
         this.addScore(points);
+
+        // 웨이브 클리어 판정
+        this.waveKills++;
+        this.checkWaveClear();
     }
 
     hitPlayer(player, enemy) {
@@ -470,6 +592,7 @@ class GameScene extends Phaser.Scene {
 
         this.hp--;
         this.isInvincible = true;
+        this.waveDamageTaken = true;
         this.sound.play('sfx_hurt');
         this.updateHearts();
 
