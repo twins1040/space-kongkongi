@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Platformer Asset Viewer</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  padding: 2rem;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.6rem;
+  color: #fff;
+}
+
+.section {
+  margin-bottom: 3rem;
+}
+
+.section h2 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #8be9fd;
+  border-bottom: 1px solid #333;
+  padding-bottom: 0.4rem;
+}
+
+.sheet-container {
+  position: relative;
+  display: inline-block;
+  background-image:
+    conic-gradient(#2a2a3e 25%, #222238 25% 50%, #2a2a3e 50% 75%, #222238 75%);
+  background-size: 16px 16px;
+  border: 1px solid #444;
+  border-radius: 4px;
+}
+
+.sheet-container img {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.frame-overlay {
+  position: absolute;
+  cursor: pointer;
+}
+
+.frame-overlay:active {
+  background: rgba(139, 233, 253, 0.3);
+}
+
+.frame-overlay.copied {
+  background: rgba(80, 250, 123, 0.35);
+  outline: 2px solid #50fa7b;
+}
+
+.frame-label {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #282a36;
+  color: #f8f8f2;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+  border: 1px solid #50fa7b;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.frame-overlay.copied .frame-label {
+  opacity: 1;
+}
+
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #50fa7b;
+  color: #1a1a2e;
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.sound-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.sound-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #282a36;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 0.3rem 0.6rem;
+}
+
+.sound-item span {
+  font-size: 0.82rem;
+  color: #ccc;
+}
+
+.sound-item button {
+  background: none;
+  border: none;
+  color: #8be9fd;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+  line-height: 1;
+}
+
+.sound-item button:active {
+  color: #50fa7b;
+}
+</style>
+</head>
+<body>
+
+<h1>Platformer Asset Viewer</h1>
+<div class="toast" id="toast"></div>
+
+<div class="section">
+  <h2>Sounds</h2>
+  <div class="sound-list" id="sound-list"></div>
+</div>
+
+<div id="sheets"></div>
+
+<script>
+const SHEETS = [
+  { name: 'Characters', img: 'assets/Spritesheets/spritesheet-characters-default.png', xml: 'assets/Spritesheets/spritesheet-characters-default.xml' },
+  { name: 'Enemies',    img: 'assets/Spritesheets/spritesheet-enemies-default.png',    xml: 'assets/Spritesheets/spritesheet-enemies-default.xml' },
+  { name: 'Tiles',      img: 'assets/Spritesheets/spritesheet-tiles-default.png',      xml: 'assets/Spritesheets/spritesheet-tiles-default.xml' },
+  { name: 'Backgrounds', img: 'assets/Spritesheets/spritesheet-backgrounds-default.png', xml: 'assets/Spritesheets/spritesheet-backgrounds-default.xml' },
+];
+
+const SOUNDS = [
+  'assets/Sounds/sfx_bump.ogg',
+  'assets/Sounds/sfx_coin.ogg',
+  'assets/Sounds/sfx_disappear.ogg',
+  'assets/Sounds/sfx_gem.ogg',
+  'assets/Sounds/sfx_hurt.ogg',
+  'assets/Sounds/sfx_jump.ogg',
+  'assets/Sounds/sfx_jump-high.ogg',
+  'assets/Sounds/sfx_magic.ogg',
+  'assets/Sounds/sfx_select.ogg',
+  'assets/Sounds/sfx_throw.ogg',
+];
+
+const toastEl = document.getElementById('toast');
+let toastTimer = null;
+
+function showToast(text) {
+  toastEl.textContent = text;
+  toastEl.classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('visible'), 1200);
+}
+
+function copyFrameName(name, overlay) {
+  navigator.clipboard.writeText(name).then(() => {
+    showToast('복사됨: ' + name);
+    overlay.classList.add('copied');
+    setTimeout(() => overlay.classList.remove('copied'), 800);
+  });
+}
+
+async function loadSheet(sheet) {
+  const section = document.createElement('div');
+  section.className = 'section';
+
+  const heading = document.createElement('h2');
+  heading.textContent = sheet.name;
+  section.appendChild(heading);
+
+  const container = document.createElement('div');
+  container.className = 'sheet-container';
+
+  const img = document.createElement('img');
+  img.src = sheet.img;
+  container.appendChild(img);
+
+  const res = await fetch(sheet.xml);
+  const text = await res.text();
+  const doc = new DOMParser().parseFromString(text, 'text/xml');
+  const subs = doc.querySelectorAll('SubTexture');
+
+  img.onload = () => {
+    subs.forEach(sub => {
+      const x = parseInt(sub.getAttribute('x'));
+      const y = parseInt(sub.getAttribute('y'));
+      const w = parseInt(sub.getAttribute('width'));
+      const h = parseInt(sub.getAttribute('height'));
+      const name = sub.getAttribute('name');
+
+      const overlay = document.createElement('div');
+      overlay.className = 'frame-overlay';
+      overlay.style.left = x + 'px';
+      overlay.style.top = y + 'px';
+      overlay.style.width = w + 'px';
+      overlay.style.height = h + 'px';
+
+      const label = document.createElement('div');
+      label.className = 'frame-label';
+      label.textContent = name;
+      overlay.appendChild(label);
+
+      overlay.addEventListener('click', () => copyFrameName(name, overlay));
+      container.appendChild(overlay);
+    });
+  };
+
+  section.appendChild(container);
+  document.getElementById('sheets').appendChild(section);
+}
+
+function initSounds() {
+  const list = document.getElementById('sound-list');
+  SOUNDS.forEach(path => {
+    const filename = path.split('/').pop().replace('.ogg', '');
+    const item = document.createElement('div');
+    item.className = 'sound-item';
+
+    const btn = document.createElement('button');
+    btn.textContent = '\u25B6';
+    btn.addEventListener('click', () => new Audio(path).play());
+
+    const span = document.createElement('span');
+    span.textContent = filename;
+
+    item.appendChild(btn);
+    item.appendChild(span);
+    list.appendChild(item);
+  });
+}
+
+initSounds();
+SHEETS.forEach(loadSheet);
+</script>
+</body>
+</html>
