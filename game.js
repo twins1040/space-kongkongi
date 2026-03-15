@@ -201,20 +201,13 @@ class GameScene extends Phaser.Scene {
             { cx: T * 5,   y: row(6) },
             { cx: T * 2.5, y: row(9) },
         ];
-        this.createPlatform(this.platformDefs[0].cx, this.platformDefs[0].y);
-        this.createPlatform(this.platformDefs[2].cx, this.platformDefs[2].y);
+        this.platformDefs.forEach(p => this.createPlatform(p.cx, p.y));
 
-        // 중간 블록열: bricks + item box + bricks (row 6)
-        const midY = row(6);
-        const midCx = T * 5;
-        const brickL = this.physics.add.staticImage(midCx - T, midY, 'tiles', 'bricks_brown').setScale(0.5).refreshBody();
-        const brickR = this.physics.add.staticImage(midCx + T, midY, 'tiles', 'bricks_brown').setScale(0.5).refreshBody();
-        this.bricks = [brickL, brickR];
         // 플레이어 — 바닥 위 중앙
         this.player = this.physics.add.sprite(W / 2, row(2), 'characters', 'character_beige_idle');
         this.player.setScale(0.5);
-        this.player.body.setSize(128, 200);
-        this.player.body.setOffset(64, 56);
+        this.player.body.setSize(160, 200);
+        this.player.body.setOffset(48, 56);
         this.player.setMaxVelocity(300, 700);
 
         // 애니메이션
@@ -231,7 +224,6 @@ class GameScene extends Phaser.Scene {
         // 충돌
         this.physics.add.collider(this.player, this.ground);
         this.physics.add.collider(this.player, this.platforms);
-        this.bricks.forEach(b => this.physics.add.collider(this.player, b));
 
         // 키보드
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -290,7 +282,6 @@ class GameScene extends Phaser.Scene {
         this.enemies = this.physics.add.group();
         this.physics.add.collider(this.enemies, this.ground);
         this.physics.add.collider(this.enemies, this.platforms);
-        this.bricks.forEach(b => this.physics.add.collider(this.enemies, b));
 
         // 플레이어 ↔ 적 overlap
         this.physics.add.overlap(this.player, this.enemies, this.handleEnemyContact, null, this);
@@ -328,8 +319,10 @@ class GameScene extends Phaser.Scene {
             stroke: '#000000', strokeThickness: 6
         }).setOrigin(0.5).setDepth(200).setAlpha(0);
 
-        // 아이템 블록 — 중간 블록열 중앙
-        this.itemBlock = this.physics.add.staticImage(midCx, midY, 'tiles', 'block_exclamation_active').setScale(0.5);
+        // 아이템 블록 — 플랫폼2 왼쪽 1칸, 같은 높이 (그리드 스냅)
+        const blockX = this.platformDefs[1].cx - T * 2; // 플랫폼2 왼쪽 2칸
+        const blockY = this.platformDefs[0].y - T * 3; // 플랫폼1 위 3칸
+        this.itemBlock = this.physics.add.staticImage(blockX, blockY, 'tiles', 'block_exclamation_active').setScale(0.5);
         this.itemBlock.refreshBody();
         this.itemBlockActive = true;
         this.physics.add.collider(this.player, this.itemBlock, this.hitItemBlock, null, this);
@@ -433,8 +426,8 @@ class GameScene extends Phaser.Scene {
 
     hitItemBlock(player, block) {
         if (!this.itemBlockActive) return;
-        // 아래에서 머리로 쳤을 때만: 플레이어가 상승 중이고 블록 아래에 위치
-        if (player.body.velocity.y >= 0 || player.y >= block.y) return;
+        // 아래에서 머리로 쳤을 때만
+        if (!player.body.touching.up || !block.body.touching.down) return;
 
         this.itemBlockActive = false;
         this.itemBlock.setFrame('block_exclamation');
@@ -667,7 +660,6 @@ class GameScene extends Phaser.Scene {
                 this.sound.play('sfx_bump');
                 this.combo++;
                 this._comboProtect = true;
-                this._canBounceJump = true;
                 this.updateComboDisplay();
                 // 점수 팝업 (1단계)
                 const scoreTxt = this.add.text(enemy.x, enemy.y - 20, '+50', {
@@ -682,7 +674,6 @@ class GameScene extends Phaser.Scene {
             player.setVelocityY(-350);
             this.sound.play('sfx_jump_high');
             this._comboProtect = true;
-            this._canBounceJump = true;
         } else {
             this.hitPlayer(player, enemy);
         }
@@ -934,10 +925,8 @@ class GameScene extends Phaser.Scene {
             player.setVelocityX(0);
         }
 
-        // 점프 (바운스 중에도 허용: 착지 전까지)
-        if (onFloor && !this._comboProtect) this._canBounceJump = false;
-        const canJump = onFloor || this._canBounceJump;
-        if (jumpDown && canJump) {
+        // 점프
+        if (jumpDown && onFloor) {
             if (this.springActive) {
                 player.setVelocityY(-840);
                 this.springActive = false;
@@ -946,7 +935,6 @@ class GameScene extends Phaser.Scene {
                 player.setVelocityY(-620);
                 this.sound.play('sfx_jump');
             }
-            this._canBounceJump = false;
         }
 
         // 착지 시 콤보 리셋 (밟기 직후 프레임은 보호)
