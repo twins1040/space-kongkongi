@@ -1,4 +1,6 @@
-// Boot: 설정 초기화 후 Load 씬으로 전환
+import Phaser from 'phaser';
+
+
 class BootScene extends Phaser.Scene {
     constructor() {
         super('Boot');
