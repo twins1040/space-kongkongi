@@ -669,6 +669,7 @@ class GameScene extends Phaser.Scene {
                 this.sound.play('sfx_bump');
                 this.combo++;
                 this._comboProtect = true;
+                this._canBounceJump = true;
                 this.updateComboDisplay();
                 // 점수 팝업 (1단계)
                 const scoreTxt = this.add.text(enemy.x, enemy.y - 20, '+50', {
@@ -683,6 +684,7 @@ class GameScene extends Phaser.Scene {
             player.setVelocityY(-350);
             this.sound.play('sfx_jump_high');
             this._comboProtect = true;
+            this._canBounceJump = true;
         } else {
             this.hitPlayer(player, enemy);
         }
@@ -934,8 +936,9 @@ class GameScene extends Phaser.Scene {
             player.setVelocityX(0);
         }
 
-        // 점프 (바운스 중에도 허용)
-        const canJump = onFloor || this._comboProtect;
+        // 점프 (바운스 중에도 허용: 착지 전까지)
+        if (onFloor && !this._comboProtect) this._canBounceJump = false;
+        const canJump = onFloor || this._canBounceJump;
         if (jumpDown && canJump) {
             if (this.springActive) {
                 player.setVelocityY(-840);
@@ -945,6 +948,7 @@ class GameScene extends Phaser.Scene {
                 player.setVelocityY(-620);
                 this.sound.play('sfx_jump');
             }
+            this._canBounceJump = false;
         }
 
         // 착지 시 콤보 리셋 (밟기 직후 프레임은 보호)
