@@ -77,22 +77,26 @@ class MenuScene extends Phaser.Scene {
         // 장식용 캐릭터
         this.add.sprite(W / 2, H - T * 2, 'characters', 'character_beige_idle').setScale(0.5);
 
+        const dpr = window.devicePixelRatio;
+
         // 타이틀
         this.add.text(W / 2, T * 3, 'BUBBLE JUMP', {
-            fontSize: '36px',
+            fontSize: '72px',
             fontFamily: 'Arial Black, Arial',
             color: '#ffffff',
             stroke: '#000000',
-            strokeThickness: 6
+            strokeThickness: 8,
+            resolution: dpr
         }).setOrigin(0.5);
 
         // "TAP TO START" 깜빡임
         const tapText = this.add.text(W / 2, T * 5, 'TAP TO START', {
-            fontSize: '20px',
-            fontFamily: 'Arial',
+            fontSize: '36px',
+            fontFamily: 'Arial Black, Arial',
             color: '#ffffff',
             stroke: '#000000',
-            strokeThickness: 3
+            strokeThickness: 6,
+            resolution: dpr
         }).setOrigin(0.5);
 
         this.tweens.add({
@@ -105,12 +109,13 @@ class MenuScene extends Phaser.Scene {
 
         // 최고 점수
         const best = localStorage.getItem('bubbleJump_highScore') || 0;
-        this.add.text(W / 2, T * 6, 'BEST: ' + Number(best).toLocaleString(), {
-            fontSize: '16px',
-            fontFamily: 'Arial',
+        this.add.text(W / 2, T * 6.5, 'BEST: ' + Number(best).toLocaleString(), {
+            fontSize: '32px',
+            fontFamily: 'Arial Black, Arial',
             color: '#ffffff',
             stroke: '#000000',
-            strokeThickness: 3
+            strokeThickness: 4,
+            resolution: dpr
         }).setOrigin(0.5);
 
         // 입력 대기
