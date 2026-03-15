@@ -74,25 +74,67 @@ class MenuScene extends Phaser.Scene {
             this.add.image(x + T / 2, H - T / 2, 'tiles', 'terrain_grass_block_top').setScale(0.5);
         }
 
-        // 장식용 캐릭터
-        this.add.sprite(W / 2, H - T * 2, 'characters', 'character_beige_idle').setScale(0.5);
+        // 장식용 적 (바닥 위 걸어다니기)
+        this.anims.create({ key: 'menu_slime', frames: [{ key: 'enemies', frame: 'slime_normal_walk_a' }, { key: 'enemies', frame: 'slime_normal_walk_b' }], frameRate: 8, repeat: -1 });
+        this.anims.create({ key: 'menu_bee', frames: [{ key: 'enemies', frame: 'bee_a' }, { key: 'enemies', frame: 'bee_b' }], frameRate: 10, repeat: -1 });
+
+        const slime1 = this.add.sprite(T, H - T * 1.5, 'enemies', 'slime_normal_walk_a').setScale(0.5);
+        slime1.anims.play('menu_slime');
+        this.tweens.add({ targets: slime1, x: W - T, duration: 4000, yoyo: true, repeat: -1 });
+
+        const slime2 = this.add.sprite(W - T, H - T * 1.5, 'enemies', 'slime_normal_walk_a').setScale(0.5).setFlipX(true);
+        slime2.anims.play('menu_slime');
+        this.tweens.add({ targets: slime2, x: T, duration: 5000, yoyo: true, repeat: -1 });
+
+        const bee = this.add.sprite(T * 2, T * 6, 'enemies', 'bee_a').setScale(0.5);
+        bee.anims.play('menu_bee');
+        this.tweens.add({ targets: bee, x: W - T * 2, duration: 3000, yoyo: true, repeat: -1 });
+        this.tweens.add({ targets: bee, y: T * 5.5, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+
+        // 장식용 캐릭터 (점프 애니메이션)
+        const char = this.add.sprite(W / 2, H - T * 2, 'characters', 'character_beige_idle').setScale(0.5);
+        this.tweens.add({
+            targets: char,
+            y: H - T * 3,
+            duration: 600,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Quad.easeOut',
+            onYoyo: () => char.setFrame('character_beige_front'),
+            onRepeat: () => char.setFrame('character_beige_jump')
+        });
+
+        // 장식용 코인/별
+        const star = this.add.image(W - T * 1.5, T * 2.5, 'tiles', 'star').setScale(0.5);
+        this.tweens.add({ targets: star, angle: 360, duration: 3000, repeat: -1 });
+        const coin = this.add.image(T * 1.5, T * 2.5, 'tiles', 'coin_gold').setScale(0.5);
+        this.tweens.add({ targets: coin, angle: -360, duration: 2500, repeat: -1 });
 
         const dpr = window.devicePixelRatio;
 
-        // 타이틀
-        this.add.text(W / 2, T * 3, '우주에서온\n콩콩이', {
+        // 타이틀 (바운스 애니메이션)
+        const title = this.add.text(W / 2, T * 3, '우주에서온\n콩콩이', {
             fontSize: '44px',
             fontFamily: 'Arial Black, Arial',
-            color: '#ffffff',
+            color: '#ffe844',
             stroke: '#000000',
             strokeThickness: 8,
             align: 'center',
             resolution: dpr
         }).setOrigin(0.5);
 
+        this.tweens.add({
+            targets: title,
+            y: T * 3 - 8,
+            duration: 1200,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
         // "TAP TO START" 깜빡임
-        const tapText = this.add.text(W / 2, T * 5, 'TAP TO START', {
-            fontSize: '36px',
+        const tapText = this.add.text(W / 2, T * 5.5, 'TAP TO START', {
+            fontSize: '28px',
             fontFamily: 'Arial Black, Arial',
             color: '#ffffff',
             stroke: '#000000',
@@ -102,16 +144,16 @@ class MenuScene extends Phaser.Scene {
 
         this.tweens.add({
             targets: tapText,
-            alpha: 0,
-            duration: 500,
+            alpha: 0.3,
+            duration: 600,
             yoyo: true,
             repeat: -1
         });
 
         // 최고 점수
         const best = localStorage.getItem('bubbleJump_highScore') || 0;
-        this.add.text(W / 2, T * 6.5, 'BEST: ' + Number(best).toLocaleString(), {
-            fontSize: '32px',
+        this.add.text(W / 2, T * 7, 'BEST: ' + Number(best).toLocaleString(), {
+            fontSize: '24px',
             fontFamily: 'Arial Black, Arial',
             color: '#ffffff',
             stroke: '#000000',
