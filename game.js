@@ -53,7 +53,8 @@ class LoadScene extends Phaser.Scene {
         this.load.audio('sfx_throw', 'assets/Sounds/sfx_throw.ogg');
     }
 
-    create() {
+    async create() {
+        await document.fonts.load('16px Jua');
         this.scene.start('Menu');
     }
 }
