@@ -205,18 +205,16 @@ class GameScene extends Phaser.Scene {
         this.createPlatform(this.platformDefs[2].cx, this.platformDefs[2].y);
 
         // 중간 블록열: bricks + item box + bricks (row 6)
-        this.brickGroup = this.physics.add.staticGroup();
         const midY = row(6);
         const midCx = T * 5;
-        const brickL = this.brickGroup.create(midCx - T, midY, 'tiles', 'bricks_brown').setScale(0.5);
-        brickL.refreshBody();
-        const brickR = this.brickGroup.create(midCx + T, midY, 'tiles', 'bricks_brown').setScale(0.5);
-        brickR.refreshBody();
+        const brickL = this.physics.add.staticImage(midCx - T, midY, 'tiles', 'bricks_brown').setScale(0.5).refreshBody();
+        const brickR = this.physics.add.staticImage(midCx + T, midY, 'tiles', 'bricks_brown').setScale(0.5).refreshBody();
+        this.bricks = [brickL, brickR];
         // 플레이어 — 바닥 위 중앙
         this.player = this.physics.add.sprite(W / 2, row(2), 'characters', 'character_beige_idle');
         this.player.setScale(0.5);
-        this.player.body.setSize(160, 200);
-        this.player.body.setOffset(48, 56);
+        this.player.body.setSize(128, 200);
+        this.player.body.setOffset(64, 56);
         this.player.setMaxVelocity(300, 700);
 
         // 애니메이션
@@ -233,7 +231,7 @@ class GameScene extends Phaser.Scene {
         // 충돌
         this.physics.add.collider(this.player, this.ground);
         this.physics.add.collider(this.player, this.platforms);
-        this.physics.add.collider(this.player, this.brickGroup);
+        this.bricks.forEach(b => this.physics.add.collider(this.player, b));
 
         // 키보드
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -292,7 +290,7 @@ class GameScene extends Phaser.Scene {
         this.enemies = this.physics.add.group();
         this.physics.add.collider(this.enemies, this.ground);
         this.physics.add.collider(this.enemies, this.platforms);
-        this.physics.add.collider(this.enemies, this.brickGroup);
+        this.bricks.forEach(b => this.physics.add.collider(this.enemies, b));
 
         // 플레이어 ↔ 적 overlap
         this.physics.add.overlap(this.player, this.enemies, this.handleEnemyContact, null, this);
@@ -435,8 +433,8 @@ class GameScene extends Phaser.Scene {
 
     hitItemBlock(player, block) {
         if (!this.itemBlockActive) return;
-        // 아래에서 머리로 쳤을 때만
-        if (!player.body.touching.up || !block.body.touching.down) return;
+        // 아래에서 머리로 쳤을 때만: 플레이어가 상승 중이고 블록 아래에 위치
+        if (player.body.velocity.y >= 0 || player.y >= block.y) return;
 
         this.itemBlockActive = false;
         this.itemBlock.setFrame('block_exclamation');
