@@ -183,6 +183,39 @@ class GameScene extends Phaser.Scene {
             right: Phaser.Input.Keyboard.KeyCodes.D,
             space: Phaser.Input.Keyboard.KeyCodes.SPACE
         });
+
+        // 터치 조작
+        this.touchLeft = false;
+        this.touchRight = false;
+        this.touchJump = false;
+
+        const btnAlpha = 0.3;
+        const btnAlphaActive = 0.6;
+        const btnY = 668;
+        const btnR = 32;
+
+        const btnLeft = this.add.circle(48, btnY, btnR, 0xffffff, btnAlpha).setDepth(100).setScrollFactor(0);
+        const btnRight = this.add.circle(128, btnY, btnR, 0xffffff, btnAlpha).setDepth(100).setScrollFactor(0);
+        const btnJump = this.add.circle(432, btnY, btnR, 0xffffff, btnAlpha).setDepth(100).setScrollFactor(0);
+
+        // 방향 표시
+        this.add.text(48, btnY, '◀', { fontSize: '20px', color: '#000' }).setOrigin(0.5).setAlpha(0.5).setDepth(101);
+        this.add.text(128, btnY, '▶', { fontSize: '20px', color: '#000' }).setOrigin(0.5).setAlpha(0.5).setDepth(101);
+        this.add.text(432, btnY, '▲', { fontSize: '20px', color: '#000' }).setOrigin(0.5).setAlpha(0.5).setDepth(101);
+
+        [btnLeft, btnRight, btnJump].forEach(btn => btn.setInteractive());
+
+        btnLeft.on('pointerdown', () => { this.touchLeft = true; btnLeft.setAlpha(btnAlphaActive); });
+        btnLeft.on('pointerup', () => { this.touchLeft = false; btnLeft.setAlpha(btnAlpha); });
+        btnLeft.on('pointerout', () => { this.touchLeft = false; btnLeft.setAlpha(btnAlpha); });
+
+        btnRight.on('pointerdown', () => { this.touchRight = true; btnRight.setAlpha(btnAlphaActive); });
+        btnRight.on('pointerup', () => { this.touchRight = false; btnRight.setAlpha(btnAlpha); });
+        btnRight.on('pointerout', () => { this.touchRight = false; btnRight.setAlpha(btnAlpha); });
+
+        btnJump.on('pointerdown', () => { this.touchJump = true; btnJump.setAlpha(btnAlphaActive); });
+        btnJump.on('pointerup', () => { this.touchJump = false; btnJump.setAlpha(btnAlpha); });
+        btnJump.on('pointerout', () => { this.touchJump = false; btnJump.setAlpha(btnAlpha); });
     }
 
     createPlatform(cx, y) {
@@ -202,11 +235,12 @@ class GameScene extends Phaser.Scene {
         const onFloor = player.body.blocked.down || player.body.touching.down;
 
         // 이동
-        const leftDown = this.cursors.left.isDown || this.wasd.left.isDown;
-        const rightDown = this.cursors.right.isDown || this.wasd.right.isDown;
+        const leftDown = this.cursors.left.isDown || this.wasd.left.isDown || this.touchLeft;
+        const rightDown = this.cursors.right.isDown || this.wasd.right.isDown || this.touchRight;
         const jumpDown = Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
                          Phaser.Input.Keyboard.JustDown(this.wasd.up) ||
-                         Phaser.Input.Keyboard.JustDown(this.wasd.space);
+                         Phaser.Input.Keyboard.JustDown(this.wasd.space) ||
+                         this.touchJump;
 
         if (leftDown) {
             player.setVelocityX(-200);
@@ -221,7 +255,12 @@ class GameScene extends Phaser.Scene {
         // 점프
         if (jumpDown && onFloor) {
             player.setVelocityY(-620);
+            this.touchJump = false;
         }
+
+        // Wrap-around
+        if (player.x < -32) player.x = 512;
+        else if (player.x > 512) player.x = -32;
 
         // 애니메이션
         if (!onFloor) {
