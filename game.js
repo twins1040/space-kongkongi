@@ -270,6 +270,22 @@ class GameScene extends Phaser.Scene {
             stroke: '#000000', strokeThickness: 6
         }).setOrigin(0.5).setDepth(200).setAlpha(0);
 
+        // 아이템 블록
+        this.itemBlock = this.physics.add.staticImage(240, 290, 'tiles', 'block_exclamation_active').setScale(0.5);
+        this.itemBlock.body.setSize(128, 128);
+        this.itemBlockActive = true;
+        this.physics.add.collider(this.player, this.itemBlock, this.hitItemBlock, null, this);
+
+        // 아이템 그룹
+        this.items = this.physics.add.group();
+        this.physics.add.collider(this.items, this.ground);
+        this.physics.add.collider(this.items, this.platforms);
+        this.physics.add.overlap(this.player, this.items, this.collectItem, null, this);
+
+        // 파워업 상태
+        this.starActive = false;
+        this.springActive = false;
+
         // 웨이브 시스템
         this.waveNum = 1;
         this.waveEnemies = [];
@@ -309,6 +325,9 @@ class GameScene extends Phaser.Scene {
         this.waveNum = wave;
         this.waveText.setText('WAVE ' + wave);
         this.waveDamageTaken = false;
+        // 아이템 블록 리셋
+        this.itemBlockActive = true;
+        this.itemBlock.setFrame('block_exclamation_active');
 
         const cfg = this.getWaveConfig(wave);
         this.waveEnemies = [...cfg.enemies];
@@ -354,6 +373,99 @@ class GameScene extends Phaser.Scene {
             enemy.enemySpeed *= this.waveSpeedMult;
             enemy.setVelocityX(enemy.enemySpeed * dir);
         }
+    }
+
+    hitItemBlock(player, block) {
+        if (!this.itemBlockActive) return;
+        // 아래에서 머리로 쳤을 때만
+        if (!player.body.touching.up || !block.body.touching.down) return;
+
+        this.itemBlockActive = false;
+        this.itemBlock.setFrame('block_exclamation');
+        this.sound.play('sfx_bump');
+
+        // 블록 바운스 연출
+        this.tweens.add({
+            targets: this.itemBlock,
+            y: this.itemBlock.y - 8,
+            duration: 80,
+            yoyo: true
+        });
+
+        // 아이템 출현
+        const roll = Math.random();
+        let itemType;
+        if (roll < 0.50) itemType = 'coin';
+        else if (roll < 0.70) itemType = 'heart';
+        else if (roll < 0.85) itemType = 'star';
+        else itemType = 'spring';
+
+        const frames = { coin: 'coin_gold', heart: 'heart', star: 'star', spring: 'spring' };
+        const item = this.items.create(240, 260, 'tiles', frames[itemType]);
+        item.setScale(0.5);
+        item.itemType = itemType;
+        item.setVelocityY(-200);
+        item.body.setAllowGravity(true);
+        item.setBounce(0.3);
+
+        // 8초 후 소멸 (6초부터 깜빡임)
+        this.time.delayedCall(6000, () => {
+            if (!item.active) return;
+            this.tweens.add({
+                targets: item,
+                alpha: 0.2,
+                duration: 200,
+                yoyo: true,
+                repeat: 4,
+                onComplete: () => { if (item.active) item.destroy(); }
+            });
+        });
+    }
+
+    collectItem(player, item) {
+        const type = item.itemType;
+        item.destroy();
+
+        if (type === 'coin') {
+            this.addScore(500);
+            this.sound.play('sfx_coin');
+        } else if (type === 'heart') {
+            if (this.hp < 3) this.hp++;
+            this.updateHearts();
+            this.sound.play('sfx_coin');
+        } else if (type === 'star') {
+            this.sound.play('sfx_magic');
+            this.activateStar();
+        } else if (type === 'spring') {
+            this.sound.play('sfx_magic');
+            this.springActive = true;
+            // 시각적 표시
+            const springTxt = this.add.text(240, 120, 'SPRING!', {
+                fontSize: '24px', fontFamily: 'Arial Black, Arial', color: '#00ffff',
+                stroke: '#000', strokeThickness: 4
+            }).setOrigin(0.5).setDepth(200);
+            this.tweens.add({ targets: springTxt, alpha: 0, delay: 1000, duration: 300, onComplete: () => springTxt.destroy() });
+        }
+    }
+
+    activateStar() {
+        this.starActive = true;
+        this.isInvincible = true;
+
+        // 깜빡임 효과
+        const blink = this.time.addEvent({
+            delay: 100,
+            repeat: 49,
+            callback: () => {
+                this.player.setAlpha(this.player.alpha === 1 ? 0.5 : 1);
+            }
+        });
+
+        this.time.delayedCall(5000, () => {
+            this.starActive = false;
+            this.isInvincible = false;
+            this.player.setAlpha(1);
+        });
     }
 
     checkWaveClear() {
@@ -469,6 +581,13 @@ class GameScene extends Phaser.Scene {
 
     handleEnemyContact(player, enemy) {
         if (enemy.isDying) return;
+
+        // 별 무적: 접촉만으로 처치 (밟기 불가 포함)
+        if (this.starActive) {
+            this.killEnemy(enemy);
+            this.sound.play('sfx_disappear');
+            return;
+        }
 
         // 밟기 불가 적은 항상 피격
         if (enemy.unstompable) {
@@ -683,9 +802,15 @@ class GameScene extends Phaser.Scene {
 
         // 점프
         if (jumpDown && onFloor) {
-            player.setVelocityY(-620);
+            if (this.springActive) {
+                player.setVelocityY(-840);
+                this.springActive = false;
+                this.sound.play('sfx_jump_high');
+            } else {
+                player.setVelocityY(-620);
+                this.sound.play('sfx_jump');
+            }
             this.touchJump = false;
-            this.sound.play('sfx_jump');
         }
 
         // 착지 시 콤보 리셋 (밟기 직후 프레임은 보호)
