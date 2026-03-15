@@ -64,10 +64,14 @@ class MenuScene extends Phaser.Scene {
     }
 
     create() {
-        // 배경
-        this.add.tileSprite(0, 0, W, H, 'backgrounds', 'background_solid_sky').setOrigin(0);
-        this.add.tileSprite(0, H - T * 6, W, T * 6, 'backgrounds', 'background_fade_hills').setOrigin(0).setAlpha(0.5);
-        this.add.tileSprite(0, H - T * 3, W, T * 3, 'backgrounds', 'background_color_hills').setOrigin(0).setAlpha(0.7);
+        // 배경 (4T × 4T 타일 배치)
+        const bgT = T * 4;
+        const fades = ['background_fade_hills', 'background_fade_trees', 'background_fade_mushrooms', 'background_fade_desert'];
+        for (let bx = 0, i = 0; bx < W; bx += bgT, i++) {
+            this.add.image(bx + bgT / 2, bgT / 2, 'backgrounds', 'background_solid_sky').setScale(0.5);
+            this.add.image(bx + bgT / 2, bgT + bgT / 2, 'backgrounds', 'background_clouds').setScale(0.5);
+            this.add.image(bx + bgT / 2, H - bgT / 2, 'backgrounds', fades[i % fades.length]).setScale(0.5);
+        }
 
         // 바닥
         for (let x = 0; x < W; x += T) {
@@ -174,10 +178,14 @@ class GameScene extends Phaser.Scene {
         // 그리드: row(0)=688(바닥), row(1)=624, row(3)=496, row(6)=304, row(9)=112
         const row = (r) => H - T / 2 - r * T;
 
-        // 배경
-        this.add.tileSprite(0, 0, W, H, 'backgrounds', 'background_solid_sky').setOrigin(0);
-        this.add.tileSprite(0, row(6), W, H - row(6), 'backgrounds', 'background_fade_hills').setOrigin(0).setAlpha(0.5);
-        this.add.tileSprite(0, row(3), W, H - row(3), 'backgrounds', 'background_color_hills').setOrigin(0).setAlpha(0.7);
+        // 배경 (4T × 4T 타일 배치)
+        const bgT = T * 4;
+        const fades = ['background_fade_hills', 'background_fade_trees', 'background_fade_mushrooms', 'background_fade_desert'];
+        for (let bx = 0, i = 0; bx < W; bx += bgT, i++) {
+            this.add.image(bx + bgT / 2, bgT / 2, 'backgrounds', 'background_solid_sky').setScale(0.5);
+            this.add.image(bx + bgT / 2, bgT + bgT / 2, 'backgrounds', 'background_clouds').setScale(0.5);
+            this.add.image(bx + bgT / 2, H - bgT / 2, 'backgrounds', fades[i % fades.length]).setScale(0.5);
+        }
 
         // 바닥 (wrap-around 영역까지 확장)
         this.ground = this.physics.add.staticGroup();
