@@ -59,18 +59,26 @@ class MenuScene extends Phaser.Scene {
     }
 
     create() {
-        const w = this.cameras.main.width;
-        const h = this.cameras.main.height;
+        const w = 480;
+        const h = 720;
 
-        // 3레이어 배경
+        // 배경 (GameScene과 동일)
         this.add.tileSprite(0, 0, w, h, 'backgrounds', 'background_solid_sky').setOrigin(0);
         this.add.tileSprite(0, 300, w, h - 300, 'backgrounds', 'background_fade_hills').setOrigin(0).setAlpha(0.5);
         this.add.tileSprite(0, 500, w, h - 500, 'backgrounds', 'background_color_hills').setOrigin(0).setAlpha(0.7);
 
-        // 바닥 장식
+        // 바닥 (GameScene과 동일)
         for (let x = 0; x < w; x += 64) {
-            this.add.image(x + 32, h - 32, 'tiles', 'terrain_grass_block_top').setScale(1);
+            this.add.image(x + 32, h - 32, 'tiles', 'terrain_grass_block_top');
         }
+
+        // 플랫폼 장식 (GameScene과 동일 위치)
+        this.createDecorationPlatform(160, 490);
+        this.createDecorationPlatform(320, 310);
+        this.createDecorationPlatform(160, 140);
+
+        // 장식용 캐릭터
+        this.add.sprite(w / 2, h - 96, 'characters', 'character_beige_idle');
 
         // 타이틀
         this.add.text(w / 2, 200, 'BUBBLE JUMP', {
@@ -81,14 +89,13 @@ class MenuScene extends Phaser.Scene {
             strokeThickness: 6
         }).setOrigin(0.5);
 
-        // 장식용 캐릭터
-        const char = this.add.sprite(w / 2, h - 100, 'characters', 'character_beige_idle').setScale(0.5);
-
         // "TAP TO START" 깜빡임
-        const tapText = this.add.text(w / 2, 420, 'TAP TO START', {
+        const tapText = this.add.text(w / 2, 300, 'TAP TO START', {
             fontSize: '20px',
             fontFamily: 'Arial',
-            color: '#ffffff'
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 3
         }).setOrigin(0.5);
 
         this.tweens.add({
@@ -101,15 +108,23 @@ class MenuScene extends Phaser.Scene {
 
         // 최고 점수
         const best = localStorage.getItem('bubbleJump_highScore') || 0;
-        this.add.text(w / 2, 480, 'BEST: ' + Number(best).toLocaleString(), {
+        this.add.text(w / 2, 360, 'BEST: ' + Number(best).toLocaleString(), {
             fontSize: '16px',
             fontFamily: 'Arial',
-            color: '#ffffff'
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 3
         }).setOrigin(0.5);
 
         // 입력 대기
         this.input.once('pointerdown', () => this.startGame());
         this.input.keyboard.once('keydown', () => this.startGame());
+    }
+
+    createDecorationPlatform(cx, y) {
+        this.add.image(cx - 64, y, 'tiles', 'terrain_grass_horizontal_left');
+        this.add.image(cx, y, 'tiles', 'terrain_grass_horizontal_middle');
+        this.add.image(cx + 64, y, 'tiles', 'terrain_grass_horizontal_right');
     }
 
     startGame() {
@@ -143,17 +158,15 @@ class GameScene extends Phaser.Scene {
 
         // 플랫폼 (one-way)
         this.platforms = this.physics.add.staticGroup();
-        this.createPlatform(144, 560);
-        this.createPlatform(336, 380);
-        this.createPlatform(144, 200);
+        this.createPlatform(160, 490);
+        this.createPlatform(320, 310);
+        this.createPlatform(160, 140);
 
         // 플레이어
-        this.player = this.physics.add.sprite(240, 640, 'characters', 'character_beige_idle');
-        this.player.setScale(0.375);
-        this.player.body.setSize(106, 117);
-        this.player.body.setOffset(11, 11);
-        this.player.setMaxVelocity(200, 500);
-        this.player.setCollideWorldBounds(false);
+        this.player = this.physics.add.sprite(240, 500, 'characters', 'character_beige_idle');
+        this.player.body.setSize(80, 100);
+        this.player.body.setOffset(24, 28);
+        this.player.setMaxVelocity(300, 700);
 
         // 애니메이션
         this.anims.create({
@@ -214,7 +227,7 @@ class GameScene extends Phaser.Scene {
 
         // 점프
         if (jumpDown && onFloor) {
-            player.setVelocityY(-420);
+            player.setVelocityY(-620);
         }
 
         // 애니메이션
@@ -253,7 +266,6 @@ const config = {
         }
     },
     scene: [BootScene, LoadScene, MenuScene, GameScene],
-    pixelArt: true,
     backgroundColor: '#4488FF'
 };
 
