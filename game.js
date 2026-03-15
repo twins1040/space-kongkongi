@@ -240,23 +240,24 @@ class GameScene extends Phaser.Scene {
         this.physics.add.overlap(this.player, this.enemies, this.handleEnemyContact, null, this);
 
         // 적 애니메이션
-        this.anims.create({
-            key: 'slime_walk',
-            frames: [
-                { key: 'enemies', frame: 'slime_normal_walk_a' },
-                { key: 'enemies', frame: 'slime_normal_walk_b' }
-            ],
-            frameRate: 8,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'worm_walk',
-            frames: [
-                { key: 'enemies', frame: 'worm_normal_move_a' },
-                { key: 'enemies', frame: 'worm_normal_move_b' }
-            ],
-            frameRate: 8,
-            repeat: -1
+        const animDefs = [
+            { key: 'slime_walk', atlas: 'enemies', frames: ['slime_normal_walk_a', 'slime_normal_walk_b'], fps: 8 },
+            { key: 'worm_walk', atlas: 'enemies', frames: ['worm_normal_move_a', 'worm_normal_move_b'], fps: 8 },
+            { key: 'mouse_walk', atlas: 'enemies', frames: ['mouse_walk_a', 'mouse_walk_b'], fps: 10 },
+            { key: 'ladybug_walk', atlas: 'enemies', frames: ['ladybug_walk_a', 'ladybug_walk_b'], fps: 8 },
+            { key: 'snail_walk', atlas: 'enemies', frames: ['snail_walk_a', 'snail_walk_b'], fps: 6 },
+            { key: 'bee_fly', atlas: 'enemies', frames: ['bee_a', 'bee_b'], fps: 10 },
+            { key: 'fly_fly', atlas: 'enemies', frames: ['fly_a', 'fly_b'], fps: 10 },
+            { key: 'saw_spin', atlas: 'enemies', frames: ['saw_a', 'saw_b'], fps: 12 },
+            { key: 'slime_spike_walk', atlas: 'enemies', frames: ['slime_spike_walk_a', 'slime_spike_walk_b'], fps: 8 },
+        ];
+        animDefs.forEach(def => {
+            this.anims.create({
+                key: def.key,
+                frames: def.frames.map(f => ({ key: def.atlas, frame: f })),
+                frameRate: def.fps,
+                repeat: -1
+            });
         });
 
         // 피격 상태
@@ -270,12 +271,15 @@ class GameScene extends Phaser.Scene {
             stroke: '#000000', strokeThickness: 6
         }).setOrigin(0.5).setDepth(200).setAlpha(0);
 
-        // 테스트용 적 스폰 (콤보 테스트 가능하도록 밀집 배치)
+        // 테스트용 적 스폰
         this.spawnEnemy('slime', 100, 640, 1);
-        this.spawnEnemy('worm', 200, 640, -1);
-        this.spawnEnemy('slime', 300, 640, 1);
-        this.spawnEnemy('slime', 150, 460, 1);
-        this.spawnEnemy('worm', 300, 460, -1);
+        this.spawnEnemy('mouse', 300, 640, -1);
+        this.spawnEnemy('ladybug', 400, 640, -1);
+        this.spawnEnemy('snail', 150, 460, 1);
+        this.spawnEnemy('bee', -32, 200, 1);
+        this.spawnEnemy('fly', 512, 350, -1);
+        this.spawnEnemy('saw', 350, 460, -1);
+        this.spawnEnemy('slime_spike', -32, 640, 1);
     }
 
     addScore(amount) {
@@ -298,8 +302,15 @@ class GameScene extends Phaser.Scene {
 
     spawnEnemy(type, x, y, dir) {
         const configs = {
-            slime: { anim: 'slime_walk', frame: 'slime_normal_walk_a', speed: 60, bodyW: 80, bodyH: 56, offX: 24, offY: 40, score: 100 },
-            worm: { anim: 'worm_walk', frame: 'worm_normal_move_a', speed: 40, bodyW: 80, bodyH: 50, offX: 24, offY: 46, score: 50 }
+            slime:       { anim: 'slime_walk',       frame: 'slime_normal_walk_a',  speed: 60,  bodyW: 80, bodyH: 56, offX: 24, offY: 40, score: 100, ground: true },
+            worm:        { anim: 'worm_walk',        frame: 'worm_normal_move_a',   speed: 40,  bodyW: 80, bodyH: 50, offX: 24, offY: 46, score: 50,  ground: true },
+            mouse:       { anim: 'mouse_walk',       frame: 'mouse_walk_a',         speed: 120, bodyW: 88, bodyH: 56, offX: 20, offY: 40, score: 150, ground: true },
+            ladybug:     { anim: 'ladybug_walk',     frame: 'ladybug_walk_a',       speed: 80,  bodyW: 80, bodyH: 56, offX: 24, offY: 40, score: 100, ground: true },
+            snail:       { anim: 'snail_walk',       frame: 'snail_walk_a',         speed: 30,  bodyW: 88, bodyH: 56, offX: 20, offY: 40, score: 50,  ground: true },
+            bee:         { anim: 'bee_fly',           frame: 'bee_a',               speed: 70,  bodyW: 64, bodyH: 64, offX: 32, offY: 32, score: 200, ground: false },
+            fly:         { anim: 'fly_fly',           frame: 'fly_a',               speed: 100, bodyW: 64, bodyH: 56, offX: 32, offY: 36, score: 150, ground: false },
+            saw:         { anim: 'saw_spin',          frame: 'saw_a',               speed: 50,  bodyW: 80, bodyH: 80, offX: 24, offY: 24, score: 0,   ground: true, unstompable: true },
+            slime_spike: { anim: 'slime_spike_walk',  frame: 'slime_spike_walk_a',  speed: 50,  bodyW: 80, bodyH: 56, offX: 24, offY: 40, score: 0,   ground: true, unstompable: true },
         };
         const cfg = configs[type];
         const enemy = this.enemies.create(x, y, 'enemies', cfg.frame);
@@ -309,21 +320,62 @@ class GameScene extends Phaser.Scene {
         enemy.setVelocityX(cfg.speed * dir);
         enemy.setFlipX(dir > 0);
         enemy.anims.play(cfg.anim, true);
-        enemy.body.setBounceX(0);
         enemy.enemyType = type;
         enemy.enemySpeed = cfg.speed;
         enemy.enemyDir = dir;
         enemy.enemyScore = cfg.score;
+        enemy.isGround = cfg.ground;
+        enemy.unstompable = cfg.unstompable || false;
+
+        if (!cfg.ground) {
+            enemy.body.setAllowGravity(false);
+            enemy.baseY = y;
+            enemy.flyTime = 0;
+        }
+
+        // 달팽이 2단계 처치
+        if (type === 'snail') {
+            enemy.snailPhase = 1;
+        }
+
         return enemy;
     }
 
     handleEnemyContact(player, enemy) {
         if (enemy.isDying) return;
 
+        // 밟기 불가 적은 항상 피격
+        if (enemy.unstompable) {
+            this.hitPlayer(player, enemy);
+            return;
+        }
+
         // 밟기 판정: 플레이어가 낙하 중이고 플레이어 하단이 적 상단 근처
         const playerBottom = player.body.bottom;
         const enemyTop = enemy.body.top;
         if (player.body.velocity.y > 0 && playerBottom < enemyTop + 16) {
+            // 달팽이 2단계 처치
+            if (enemy.enemyType === 'snail' && enemy.snailPhase === 1) {
+                enemy.snailPhase = 2;
+                enemy.anims.stop();
+                enemy.setFrame('snail_shell');
+                enemy.setVelocityX(0);
+                enemy.enemySpeed = 0;
+                enemy.enemyScore = 200;
+                player.setVelocityY(-350);
+                this.sound.play('sfx_bump');
+                this.combo++;
+                this._comboProtect = true;
+                this.updateComboDisplay();
+                // 점수 팝업 (1단계)
+                const scoreTxt = this.add.text(enemy.x, enemy.y - 20, '+50', {
+                    fontSize: '20px', fontFamily: 'Arial Black, Arial', color: '#ffff00',
+                    stroke: '#000', strokeThickness: 4
+                }).setOrigin(0.5).setDepth(50);
+                this.tweens.add({ targets: scoreTxt, y: scoreTxt.y - 40, alpha: 0, duration: 800, onComplete: () => scoreTxt.destroy() });
+                this.addScore(50);
+                return;
+            }
             this.killEnemy(enemy);
             player.setVelocityY(-350);
             this.sound.play('sfx_jump_high');
@@ -365,8 +417,12 @@ class GameScene extends Phaser.Scene {
         enemy.isDying = true;
         enemy.body.enable = false;
         enemy.anims.stop();
-        const restFrames = { slime: 'slime_normal_rest', worm: 'worm_normal_rest' };
-        enemy.setFrame(restFrames[enemy.enemyType]);
+        const restFrames = {
+            slime: 'slime_normal_rest', worm: 'worm_normal_rest',
+            mouse: 'mouse_rest', ladybug: 'ladybug_rest',
+            snail: 'snail_rest', bee: 'bee_rest', fly: 'fly_rest'
+        };
+        enemy.setFrame(restFrames[enemy.enemyType] || 'slime_normal_rest');
 
         // 콤보
         this.combo++;
@@ -525,15 +581,24 @@ class GameScene extends Phaser.Scene {
             // Wrap-around
             if (enemy.x < -32) enemy.x = 512;
             else if (enemy.x > 512) enemy.x = -32;
-            // 플랫폼/바닥 가장자리에서 반전
-            if (enemy.body.blocked.right || enemy.body.touching.right) {
-                enemy.enemyDir = -1;
-                enemy.setVelocityX(-enemy.enemySpeed);
-                enemy.setFlipX(false);
-            } else if (enemy.body.blocked.left || enemy.body.touching.left) {
-                enemy.enemyDir = 1;
-                enemy.setVelocityX(enemy.enemySpeed);
-                enemy.setFlipX(true);
+
+            if (enemy.isGround) {
+                // 지상 적: 벽 반전
+                if (enemy.body.blocked.right || enemy.body.touching.right) {
+                    enemy.enemyDir = -1;
+                    enemy.setVelocityX(-enemy.enemySpeed);
+                    enemy.setFlipX(false);
+                } else if (enemy.body.blocked.left || enemy.body.touching.left) {
+                    enemy.enemyDir = 1;
+                    enemy.setVelocityX(enemy.enemySpeed);
+                    enemy.setFlipX(true);
+                }
+            } else {
+                // 공중 적: 수평 직선 + 사인파 (벌만)
+                if (enemy.enemyType === 'bee') {
+                    enemy.flyTime += 0.03;
+                    enemy.y = enemy.baseY + Math.sin(enemy.flyTime) * 30;
+                }
             }
         });
 
