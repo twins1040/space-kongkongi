@@ -30,10 +30,10 @@ class LoadScene extends Phaser.Scene {
         });
 
         // 아틀라스
-        this.load.atlasXML('characters', 'assets/Spritesheets/spritesheet-characters-default.png', 'assets/Spritesheets/spritesheet-characters-default.xml');
-        this.load.atlasXML('enemies', 'assets/Spritesheets/spritesheet-enemies-default.png', 'assets/Spritesheets/spritesheet-enemies-default.xml');
-        this.load.atlasXML('tiles', 'assets/Spritesheets/spritesheet-tiles-default.png', 'assets/Spritesheets/spritesheet-tiles-default.xml');
-        this.load.atlasXML('backgrounds', 'assets/Spritesheets/spritesheet-backgrounds-default.png', 'assets/Spritesheets/spritesheet-backgrounds-default.xml');
+        this.load.atlasXML('characters', 'assets/Spritesheets/spritesheet-characters-double.png', 'assets/Spritesheets/spritesheet-characters-double.xml');
+        this.load.atlasXML('enemies', 'assets/Spritesheets/spritesheet-enemies-double.png', 'assets/Spritesheets/spritesheet-enemies-double.xml');
+        this.load.atlasXML('tiles', 'assets/Spritesheets/spritesheet-tiles-double.png', 'assets/Spritesheets/spritesheet-tiles-double.xml');
+        this.load.atlasXML('backgrounds', 'assets/Spritesheets/spritesheet-backgrounds-double.png', 'assets/Spritesheets/spritesheet-backgrounds-double.xml');
 
         // 사운드
         this.load.audio('sfx_bump', 'assets/Sounds/sfx_bump.ogg');
@@ -69,16 +69,11 @@ class MenuScene extends Phaser.Scene {
 
         // 바닥 (GameScene과 동일)
         for (let x = 0; x < w; x += 64) {
-            this.add.image(x + 32, h - 32, 'tiles', 'terrain_grass_block_top');
+            this.add.image(x + 32, h - 32, 'tiles', 'terrain_grass_block_top').setScale(0.5);
         }
 
-        // 플랫폼 장식 (GameScene과 동일 위치)
-        this.createDecorationPlatform(160, 490);
-        this.createDecorationPlatform(320, 310);
-        this.createDecorationPlatform(160, 140);
-
         // 장식용 캐릭터
-        this.add.sprite(w / 2, h - 96, 'characters', 'character_beige_idle');
+        this.add.sprite(w / 2, h - 128, 'characters', 'character_beige_idle').setScale(0.5);
 
         // 타이틀
         this.add.text(w / 2, 200, 'BUBBLE JUMP', {
@@ -121,11 +116,6 @@ class MenuScene extends Phaser.Scene {
         this.input.keyboard.once('keydown', () => this.startGame());
     }
 
-    createDecorationPlatform(cx, y) {
-        this.add.image(cx - 64, y, 'tiles', 'terrain_grass_horizontal_left');
-        this.add.image(cx, y, 'tiles', 'terrain_grass_horizontal_middle');
-        this.add.image(cx + 64, y, 'tiles', 'terrain_grass_horizontal_right');
-    }
 
     startGame() {
         if (this.sound.context.state === 'suspended') {
@@ -153,7 +143,8 @@ class GameScene extends Phaser.Scene {
         // 바닥 (static group)
         this.ground = this.physics.add.staticGroup();
         for (let x = 0; x < w; x += 64) {
-            this.ground.create(x + 32, h - 32, 'tiles', 'terrain_grass_block_top');
+            const tile = this.ground.create(x + 32, h - 32, 'tiles', 'terrain_grass_block_top');
+            tile.setScale(0.5).refreshBody();
         }
 
         // 플랫폼 (one-way)
@@ -164,8 +155,9 @@ class GameScene extends Phaser.Scene {
 
         // 플레이어
         this.player = this.physics.add.sprite(240, 500, 'characters', 'character_beige_idle');
-        this.player.body.setSize(80, 100);
-        this.player.body.setOffset(24, 28);
+        this.player.setScale(0.5);
+        this.player.body.setSize(160, 200);
+        this.player.body.setOffset(48, 56);
         this.player.setMaxVelocity(300, 700);
 
         // 애니메이션
@@ -198,6 +190,7 @@ class GameScene extends Phaser.Scene {
         const mid = this.platforms.create(cx, y, 'tiles', 'terrain_grass_horizontal_middle');
         const right = this.platforms.create(cx + 64, y, 'tiles', 'terrain_grass_horizontal_right');
         [left, mid, right].forEach(tile => {
+            tile.setScale(0.5).refreshBody();
             tile.body.checkCollision.down = false;
             tile.body.checkCollision.left = false;
             tile.body.checkCollision.right = false;
