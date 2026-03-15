@@ -80,12 +80,13 @@ class MenuScene extends Phaser.Scene {
         const dpr = window.devicePixelRatio;
 
         // 타이틀
-        this.add.text(W / 2, T * 3, 'BUBBLE JUMP', {
-            fontSize: '72px',
+        this.add.text(W / 2, T * 3, '우주에서온\n콩콩이', {
+            fontSize: '44px',
             fontFamily: 'Arial Black, Arial',
             color: '#ffffff',
             stroke: '#000000',
             strokeThickness: 8,
+            align: 'center',
             resolution: dpr
         }).setOrigin(0.5);
 
