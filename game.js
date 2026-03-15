@@ -142,9 +142,9 @@ class GameScene extends Phaser.Scene {
         this.add.tileSprite(0, 300, w, h - 300, 'backgrounds', 'background_fade_hills').setOrigin(0).setAlpha(0.5);
         this.add.tileSprite(0, 500, w, h - 500, 'backgrounds', 'background_color_hills').setOrigin(0).setAlpha(0.7);
 
-        // 바닥 (static group)
+        // 바닥 (wrap-around 영역까지 확장)
         this.ground = this.physics.add.staticGroup();
-        for (let x = 0; x < w; x += 64) {
+        for (let x = -128; x < w + 128; x += 64) {
             const tile = this.ground.create(x + 32, h - 32, 'tiles', 'terrain_grass_block_top');
             tile.setScale(0.5).refreshBody();
         }
@@ -272,14 +272,14 @@ class GameScene extends Phaser.Scene {
         }).setOrigin(0.5).setDepth(200).setAlpha(0);
 
         // 테스트용 적 스폰
-        this.spawnEnemy('slime', 100, 640, 1);
-        this.spawnEnemy('mouse', 300, 640, -1);
-        this.spawnEnemy('ladybug', 400, 640, -1);
-        this.spawnEnemy('snail', 150, 460, 1);
+        this.spawnEnemy('slime', -32, 640, 1);
+        this.spawnEnemy('mouse', 512, 640, -1);
+        this.spawnEnemy('ladybug', -32, 640, 1);
+        this.spawnEnemyOnPlatform('snail', 160, 490, 1);
         this.spawnEnemy('bee', -32, 200, 1);
         this.spawnEnemy('fly', 512, 350, -1);
-        this.spawnEnemy('saw', 350, 460, -1);
-        this.spawnEnemy('slime_spike', -32, 640, 1);
+        this.spawnEnemyOnPlatform('saw', 320, 310, -1);
+        this.spawnEnemy('slime_spike', 512, 640, -1);
     }
 
     addScore(amount) {
@@ -332,6 +332,14 @@ class GameScene extends Phaser.Scene {
             enemy.baseY = y;
             enemy.flyTime = 0;
         }
+
+        return enemy;
+    }
+
+    spawnEnemyOnPlatform(type, platformCx, platformY, dir) {
+        const enemy = this.spawnEnemy(type, platformCx, platformY - 50, dir);
+        enemy.patrolMinX = platformCx - 80;
+        enemy.patrolMaxX = platformCx + 80;
 
         // 달팽이 2단계 처치
         if (type === 'snail') {
@@ -578,12 +586,12 @@ class GameScene extends Phaser.Scene {
         // 적 업데이트
         this.enemies.getChildren().forEach(enemy => {
             if (enemy.isDying) return;
-            // Wrap-around
-            if (enemy.x < -32) enemy.x = 512;
-            else if (enemy.x > 512) enemy.x = -32;
 
             if (enemy.isGround) {
-                // 지상 적: 벽 반전
+                // wrap-around
+                if (enemy.x < -32) enemy.x = 512;
+                else if (enemy.x > 512) enemy.x = -32;
+                // 벽 반전
                 if (enemy.body.blocked.right || enemy.body.touching.right) {
                     enemy.enemyDir = -1;
                     enemy.setVelocityX(-enemy.enemySpeed);
@@ -593,8 +601,23 @@ class GameScene extends Phaser.Scene {
                     enemy.setVelocityX(enemy.enemySpeed);
                     enemy.setFlipX(true);
                 }
+                // 순찰 범위 반전
+                if (enemy.patrolMinX != null) {
+                    if (enemy.enemyDir < 0 && enemy.x <= enemy.patrolMinX) {
+                        enemy.enemyDir = 1;
+                        enemy.setVelocityX(enemy.enemySpeed);
+                        enemy.setFlipX(true);
+                    } else if (enemy.enemyDir > 0 && enemy.x >= enemy.patrolMaxX) {
+                        enemy.enemyDir = -1;
+                        enemy.setVelocityX(-enemy.enemySpeed);
+                        enemy.setFlipX(false);
+                    }
+                }
             } else {
-                // 공중 적: 수평 직선 + 사인파 (벌만)
+                // 공중 적: wrap-around
+                if (enemy.x < -32) enemy.x = 512;
+                else if (enemy.x > 512) enemy.x = -32;
+                // 벌: 사인파
                 if (enemy.enemyType === 'bee') {
                     enemy.flyTime += 0.03;
                     enemy.y = enemy.baseY + Math.sin(enemy.flyTime) * 30;
