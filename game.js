@@ -207,6 +207,30 @@ class GameScene extends Phaser.Scene {
         this.touchBtnAlpha = btnAlpha;
         this.touchBtnAlphaActive = btnAlphaActive;
 
+        // HUD
+        this.score = 0;
+        this.waveNum = 1;
+
+        // 체력 하트
+        this.hearts = [];
+        for (let i = 0; i < 3; i++) {
+            const heart = this.add.image(20 + i * 28, 20, 'tiles', 'hud_heart').setScale(0.25).setDepth(200).setScrollFactor(0);
+            this.hearts.push(heart);
+        }
+
+        // 웨이브 표시
+        this.waveText = this.add.text(240, 20, 'WAVE 1', {
+            fontSize: '16px', fontFamily: 'Arial', color: '#ffffff',
+            stroke: '#000000', strokeThickness: 3
+        }).setOrigin(0.5).setDepth(200).setScrollFactor(0);
+
+        // 점수 표시
+        this.scoreIcon = this.add.image(440, 20, 'tiles', 'hud_coin').setScale(0.25).setDepth(200).setScrollFactor(0);
+        this.scoreText = this.add.text(428, 20, '0', {
+            fontSize: '16px', fontFamily: 'Arial', color: '#ffffff',
+            stroke: '#000000', strokeThickness: 3
+        }).setOrigin(1, 0.5).setDepth(200).setScrollFactor(0);
+
         // 적 그룹
         this.enemies = this.physics.add.group();
         this.physics.add.collider(this.enemies, this.ground);
@@ -243,6 +267,24 @@ class GameScene extends Phaser.Scene {
         this.spawnEnemy('slime', -32, 640, 1);
         this.spawnEnemy('worm', 512, 640, -1);
         this.spawnEnemy('slime', 512, 460, -1);
+    }
+
+    addScore(amount) {
+        this.score += amount;
+        this.scoreText.setText(this.score.toLocaleString());
+        this.tweens.add({
+            targets: this.scoreText,
+            scaleX: 1.3,
+            scaleY: 1.3,
+            duration: 100,
+            yoyo: true
+        });
+    }
+
+    updateHearts() {
+        for (let i = 0; i < 3; i++) {
+            this.hearts[i].setFrame(i < this.hp ? 'hud_heart' : 'hud_heart_empty');
+        }
     }
 
     spawnEnemy(type, x, y, dir) {
@@ -311,6 +353,7 @@ class GameScene extends Phaser.Scene {
         });
 
         this.sound.play('sfx_disappear');
+        this.addScore(enemy.enemyScore);
     }
 
     hitPlayer(player, enemy) {
@@ -319,6 +362,7 @@ class GameScene extends Phaser.Scene {
         this.hp--;
         this.isInvincible = true;
         this.sound.play('sfx_hurt');
+        this.updateHearts();
 
         // 넉백
         const knockDir = player.x < enemy.x ? -1 : 1;
