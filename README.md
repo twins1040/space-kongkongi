@@ -3,7 +3,7 @@
 2D 싱글 스크린 아케이드 플랫포머. 적을 밟아 처치하고 웨이브를 생존하며 최고 점수를 달성하세요.
 
 <p align="center">
-  <img src="public/screenshot.png" alt="gameplay" width="300">
+  <img src="screenshot.png" alt="gameplay" width="300">
 </p>
 
 ## 플레이
