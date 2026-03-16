@@ -106,7 +106,7 @@ class MenuScene extends Phaser.Scene {
         const dpr = window.devicePixelRatio;
 
         // 타이틀 (바운스 애니메이션)
-        const title = this.add.text(W / 2, T * 3, '우주에서온\n콩콩이', {
+        const title = this.add.text(W / 2, T * 3, '우주에서 온\n콩콩이', {
             fontSize: '44px',
             fontFamily: 'Jua, sans-serif',
             color: '#ffe844',
