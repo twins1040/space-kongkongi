@@ -46,4 +46,4 @@ npm run dev
 
 ## 크레딧
 
-- 에셋: [Kenney Platformer Pack](https://kenney.nl/assets/platformer-pack) (CC0 1.0)
+- 에셋: [Kenney Platformer Pack](https://kenney.nl/assets/new-platformer-pack) (CC0 1.0)
